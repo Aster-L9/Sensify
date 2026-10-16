@@ -1,0 +1,10 @@
+{
+  "detection_rate": {"metric": "ml.overall.rate", "op": ">=", "value": 0.90, "label": "Event detection rate (overall)"},
+  "detection_rate_per_type": {"metric": "ml.per_type_min_rate", "op": ">=", "value": 0.75, "label": "Detection rate per scenario type (lowest)"},
+  "tick_false_alarm_rate": {"metric": "ml.false_alarm.tick_rate", "op": "<=", "value": 0.01, "label": "Tick false-alarm rate on normal runs"},
+  "false_windows_per_run": {"metric": "ml.false_alarm.windows_per_run", "op": "<=", "value": 0.5, "label": "False alert windows per normal run"},
+  "window_precision": {"metric": "ml.window_precision", "op": ">=", "value": 0.80, "label": "Window precision"},
+  "median_time_to_detect": {"metric": "ml.time_to_detect_s.median", "op": "<=", "value": 60, "label": "Median time to detect (s)"},
+  "trust_compromise_detection": {"metric": "trust.compromise_detection_rate", "op": ">=", "value": 0.80, "label": "Compromised-reporting detection (trust)"},
+  "trust_false_low_rate": {"metric": "trust.low_trust_rate_honest", "op": "<=", "value": 0.05, "label": "Low-trust rate on honest runs"}
+}

@@ -1,140 +1,104 @@
 'use client';
 
 import React from 'react';
-import { StatusBadge } from '@/components/ui/StatusBadge';
-import { KPITile } from '@/components/ui/KPITile';
-import {
-  Gauge,
-  Wind,
-  Thermometer,
-  AlertTriangle,
-  X,
-  CheckCircle2,
-  Activity,
-  Layers,
-  MapPin
-} from 'lucide-react';
+import Link from 'next/link';
+import { ArrowUpRight, X } from 'lucide-react';
+import { STATE_STYLE, formatTick } from '@/lib/detection';
+import type { AlertItem, RunEvent, Segment, SegmentState, TelemetryPoint } from '@/lib/types';
+import { seriesFor } from '@/hooks/useRunData';
+import { TrustIndicator } from '@/components/detection/TrustIndicator';
+import { AnomalyBandChart, type FlagWindow } from '@/components/detection/AnomalyBandChart';
+import { EventStrip } from '@/components/detection/EventStrip';
 
 interface SegmentDetailProps {
-  segment: any;
-  telemetry?: any;
+  runId: number;
+  segment: Segment;
+  state: SegmentState | null;
+  tick: number;
+  durationTicks: number;
+  telemetry: TelemetryPoint[];
+  scores: number[];
+  threshold: number;
+  alerts: AlertItem[];
+  events: RunEvent[];
+  onPickTick: (tick: number) => void;
+  onSelectEvent: (event: RunEvent) => void;
   onClose: () => void;
 }
 
-export function SegmentDetail({ segment, telemetry, onClose }: SegmentDetailProps) {
-  if (!segment) return null;
+const TYPE_LABEL: Record<string, string> = {
+  terminal: 'Terminal',
+  pipeline: 'Pipeline',
+  pump_station: 'Pump station',
+  valve_station: 'Valve station',
+};
 
-  const currentPressure = telemetry?.pressure_bar || segment.design_pressure_bar * 0.9;
-  const currentFlow = telemetry?.flow_m3h || 1250;
-  const currentTemp = telemetry?.temp_c || 42.5;
-
-  const pressureRatio = (currentPressure / segment.design_pressure_bar) * 100;
+/** One segment at the cursor time: state, readings, trust and its own charts. */
+export function SegmentDetail({
+  runId, segment, state, tick, durationTicks, telemetry, scores, threshold, alerts, events, onPickTick, onSelectEvent, onClose,
+}: SegmentDetailProps) {
+  const series = seriesFor(telemetry, segment.id);
+  const windows: FlagWindow[] = alerts.filter((a) => a.segment_id === segment.id).map((a) => ({
+    start: a.start_tick, end: a.end_tick, kind: a.kinds.includes('low_trust') ? 'low_trust' : 'anomaly',
+  }));
+  const segEvents = events.filter((e) => e.segment_id === segment.id || e.segment_id === null);
+  const style = STATE_STYLE[state?.state ?? 'normal'];
+  const Icon = style.icon;
 
   return (
-    <div className="glass-card p-6 border-brand-500/30 shadow-2xl space-y-6 animate-slide-in-right">
-      {/* Header */}
-      <div className="flex items-start justify-between border-b border-gray-200 pb-4">
+    <section className="glass-card p-5 space-y-5" aria-label={`${segment.code} details`}>
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-50 text-brand-400 border border-gray-200">
-              SEGMENT #{segment.id}
-            </span>
-            <StatusBadge status={segment.status} size="sm" />
-          </div>
-          <h2 className="text-lg font-bold text-gray-900">{segment.name}</h2>
-          <p className="text-xs text-gray-500 font-mono mt-0.5 flex items-center gap-1">
-            <MapPin className="w-3 h-3 text-brand-400" /> {segment.start_node?.name} ➔ {segment.end_node?.name}
+          <p className="text-sm text-gray-500">{TYPE_LABEL[segment.segment_type] ?? segment.segment_type}, {segment.length_km} km</p>
+          <h2 className="text-lg font-bold text-gray-900">{segment.code} {segment.name}</h2>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: style.textColor }}>
+            <Icon className="w-4 h-4" aria-hidden /> {style.label} at <span className="font-mono tabular">{formatTick(tick)}</span>
           </p>
         </div>
-
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-xl bg-gray-50 hover:bg-gray-50 text-gray-500 hover:text-gray-900 transition-colors"
-        >
+        <button onClick={onClose} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900" aria-label="Close segment details">
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Primary Telemetry Grid */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="glass-card p-3 bg-gray-50 text-center">
-          <Gauge className="w-4 h-4 text-brand-400 mx-auto mb-1" />
-          <span className="text-[10px] text-gray-500 uppercase font-semibold block">Pressure</span>
-          <span className="text-base font-bold font-mono text-gray-900">{currentPressure.toFixed(1)}</span>
-          <span className="text-[10px] text-gray-500 block">Bar</span>
-        </div>
+      <dl className="grid grid-cols-3 gap-3 text-sm">
+        <Reading label="Pressure" value={state?.pressure_bar} unit="bar" digits={2} />
+        <Reading label="Flow" value={state?.flow_m3h} unit="m³/h" digits={0} />
+        <Reading label="Temperature" value={state?.temperature_c} unit="°C" digits={1} />
+        <Reading label="Anomaly score" value={state?.anomaly_score} unit="" digits={2} />
+        {state?.valve_open_pct !== null && state?.valve_open_pct !== undefined && <Reading label="Valve" value={state.valve_open_pct} unit="% open" digits={0} />}
+        {state?.pump_speed_pct !== null && state?.pump_speed_pct !== undefined && <Reading label="Pump" value={state.pump_speed_pct} unit="% speed" digits={0} />}
+      </dl>
 
-        <div className="glass-card p-3 bg-gray-50 text-center">
-          <Wind className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-          <span className="text-[10px] text-gray-500 uppercase font-semibold block">Flow Rate</span>
-          <span className="text-base font-bold font-mono text-gray-900">{Math.round(currentFlow)}</span>
-          <span className="text-[10px] text-gray-500 block">m³/h</span>
-        </div>
-
-        <div className="glass-card p-3 bg-gray-50 text-center">
-          <Thermometer className="w-4 h-4 text-amber-400 mx-auto mb-1" />
-          <span className="text-[10px] text-gray-500 uppercase font-semibold block">Temperature</span>
-          <span className="text-base font-bold font-mono text-gray-900">{currentTemp.toFixed(1)}</span>
-          <span className="text-[10px] text-gray-500 block">°C</span>
-        </div>
+      <div>
+        <h3 className="text-sm font-semibold text-gray-800 mb-2">Can these readings be trusted?</h3>
+        <TrustIndicator score={state?.trust_score ?? null} status={state?.trust_status ?? null} factors={state?.factors ?? []} compact />
       </div>
 
-      {/* Pressure Capacity Load Bar */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-xs font-mono">
-          <span className="text-gray-500">Design Capacity Load:</span>
-          <span className={`font-semibold ${pressureRatio > 95 ? 'text-red-400' : 'text-brand-500'}`}>
-            {pressureRatio.toFixed(1)}% ({currentPressure.toFixed(1)} / {segment.design_pressure_bar} Bar)
-          </span>
-        </div>
-        <div className="w-full bg-gray-50 h-2 rounded-full overflow-hidden border border-gray-200">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              pressureRatio > 95 ? 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]' : 'bg-brand-500'
-            }`}
-            style={{ width: `${Math.min(pressureRatio, 100)}%` }}
-          />
-        </div>
+      <div className="space-y-2">
+        <AnomalyBandChart label="Pressure" unit="bar" ticks={series.ticks} values={series.pressure} windows={windows}
+          durationTicks={durationTicks} cursorTick={tick} onPickTick={onPickTick} syncId={`seg-${segment.id}`}
+          showScoreBand={false} height={96} />
+        <AnomalyBandChart label="Flow and anomaly score" unit="m³/h" ticks={series.ticks} values={series.flow} scores={scores}
+          threshold={threshold} windows={windows} durationTicks={durationTicks} cursorTick={tick} onPickTick={onPickTick}
+          syncId={`seg-${segment.id}`} height={96} />
+        <EventStrip events={segEvents} durationTicks={durationTicks} onSelect={onSelectEvent} syncId={`seg-${segment.id}`} cursorTick={tick} />
       </div>
 
-      {/* Physical Attributes Table */}
-      <div className="space-y-2 text-xs">
-        <h3 className="font-semibold text-gray-600 flex items-center gap-1.5">
-          <Layers className="w-3.5 h-3.5 text-brand-400" /> Segment Physical Specifications
-        </h3>
+      <Link href={`/runs/${runId}?t=${tick}&seg=${segment.code}`} className="btn-secondary w-full py-2 text-sm flex items-center justify-center gap-1.5">
+        Open in the run view <ArrowUpRight className="w-4 h-4" aria-hidden />
+      </Link>
+    </section>
+  );
+}
 
-        <div className="glass-card p-3 bg-gray-50 divide-y divide-dark-800/60 text-gray-600">
-          <div className="flex justify-between py-1.5">
-            <span className="text-gray-500">Pipe Diameter</span>
-            <span className="font-mono font-medium">{segment.diameter_mm} mm</span>
-          </div>
-          <div className="flex justify-between py-1.5">
-            <span className="text-gray-500">Pipeline Length</span>
-            <span className="font-mono font-medium">{segment.length_km} km</span>
-          </div>
-          <div className="flex justify-between py-1.5">
-            <span className="text-gray-500">Design Pressure Limit</span>
-            <span className="font-mono font-medium">{segment.design_pressure_bar} Bar</span>
-          </div>
-          <div className="flex justify-between py-1.5">
-            <span className="text-gray-500">Pipe Material</span>
-            <span className="font-mono font-medium">Carbon Steel API 5L X70</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Incident / Maintenance Banner */}
-      {segment.status === 'critical' && (
-        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 animate-pulse" />
-          <div>
-            <p className="font-semibold">CRITICAL PRESSURE DROP DETECTED</p>
-            <p className="text-[11px] text-red-300/80 mt-0.5">
-              Telemetry signals potential valve leakage or localized pressure loss along segment path.
-            </p>
-          </div>
-        </div>
-      )}
+function Reading({ label, value, unit, digits }: { label: string; value: number | null | undefined; unit: string; digits: number }) {
+  return (
+    <div className="rounded-xl bg-gray-50 px-3 py-2">
+      <dt className="text-xs text-gray-500">{label}</dt>
+      <dd className="font-mono tabular text-gray-900">
+        {value === null || value === undefined ? '—' : value.toFixed(digits)}
+        {unit && <span className="text-xs text-gray-500 font-sans"> {unit}</span>}
+      </dd>
     </div>
   );
 }

@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "algorithm": "isolation_forest",
+  "feature_spec": "f1",
+  "params": {
+    "n_estimators": 150,
+    "max_samples": 256,
+    "alpha": 0.004,
+    "random_state": 2026
+  },
+  "dataset": {
+    "path": "ml/data",
+    "runs": 220,
+    "splits": {
+      "train": {
+        "normal": 60
+      },
+      "validation": {
+        "normal": 20,
+        "physical_anomaly": 6,
+        "sensor_fault": 6,
+        "telemetry_manipulation": 6,
+        "unauthorized_control": 6,
+        "concealed_physical_incident": 6
+      },
+      "test": {
+        "normal": 20,
+        "physical_anomaly": 18,
+        "sensor_fault": 18,
+        "telemetry_manipulation": 18,
+        "unauthorized_control": 18,
+        "concealed_physical_incident": 18
+      }
+    }
+  },
+  "metrics": {
+    "ml": {
+      "overall": {
+        "detected": 76,
+        "total": 90,
+        "rate": 0.8444444444444444
+      },
+      "per_type": {
+        "concealed_physical_incident": {
+          "detected": 15,
+          "total": 18,
+          "rate": 0.8333333333333334
+        },
+        "physical_anomaly": {
+          "detected": 16,
+          "total": 18,
+          "rate": 0.8888888888888888
+        },
+        "sensor_fault": {
+          "detected": 10,
+          "total": 18,
+          "rate": 0.5555555555555556
+        },
+        "telemetry_manipulation": {
+          "detected": 18,
+          "total": 18,
+          "rate": 1.0
+        },
+        "unauthorized_control": {
+          "detected": 17,
+          "total": 18,
+          "rate": 0.9444444444444444
+        }
+      },
+      "per_type_min_rate": 0.5555555555555556,
+      "time_to_detect_s": {
+        "median": 20.0,
+        "p90": 52.5
+      },
+      "false_alarm": {
+        "tick_rate": 0.0003472222222222222,
+        "windows_per_run": 0.15
+      },
+      "window_precision": 0.9884488448844885,
+      "localization_hit_rate": 0.3815789473684211,
+      "roc_auc": 0.9334467314093996
+    },
+    "baseline": {
+      "overall": {
+        "detected": 64,
+        "total": 90,
+        "rate": 0.7111111111111111
+      },
+      "per_type": {
+        "concealed_physical_incident": {
+          "detected": 10,
+          "total": 18,
+          "rate": 0.5555555555555556
+        },
+        "physical_anomaly": {
+          "detected": 13,
+          "total": 18,
+          "rate": 0.7222222222222222
+        },
+        "sensor_fault": {
+          "detected": 10,
+          "total": 18,
+          "rate": 0.5555555555555556
+        },
+        "telemetry_manipulation": {
+          "detected": 17,
+          "total": 18,
+          "rate": 0.9444444444444444
+        },
+        "unauthorized_control": {
+          "detected": 14,
+          "total": 18,
+          "rate": 0.7777777777777778
+        }
+      },
+      "per_type_min_rate": 0.5555555555555556,
+      "time_to_detect_s": {
+        "median": 35.0,
+        "p90": 520.0000000000001
+      },
+      "false_alarm": {
+        "tick_rate": 0.0,
+        "windows_per_run": 0.0
+      },
+      "window_precision": 1.0,
+      "localization_hit_rate": 0.640625,
+      "roc_auc": null
+    },
+    "trust": {
+      "compromise_detection_rate": 0.8333333333333334,
+      "compromised_runs": 54,
+      "low_trust_rate_honest": 4.96031746031746e-05
+    }
+  },
+  "targets": {
+    "detection_rate": {
+      "metric": "ml.overall.rate",
+      "op": ">=",
+      "value": 0.9,
+      "label": "Event detection rate (overall)"
+    },
+    "detection_rate_per_type": {
+      "metric": "ml.per_type_min_rate",
+      "op": ">=",
+      "value": 0.75,
+      "label": "Detection rate per scenario type (lowest)"
+    },
+    "tick_false_alarm_rate": {
+      "metric": "ml.false_alarm.tick_rate",
+      "op": "<=",
+      "value": 0.01,
+      "label": "Tick false-alarm rate on normal runs"
+    },
+    "false_windows_per_run": {
+      "metric": "ml.false_alarm.windows_per_run",
+      "op": "<=",
+      "value": 0.5,
+      "label": "False alert windows per normal run"
+    },
+    "window_precision": {
+      "metric": "ml.window_precision",
+      "op": ">=",
+      "value": 0.8,
+      "label": "Window precision"
+    },
+    "median_time_to_detect": {
+      "metric": "ml.time_to_detect_s.median",
+      "op": "<=",
+      "value": 60,
+      "label": "Median time to detect (s)"
+    },
+    "trust_compromise_detection": {
+      "metric": "trust.compromise_detection_rate",
+      "op": ">=",
+      "value": 0.8,
+      "label": "Compromised-reporting detection (trust)"
+    },
+    "trust_false_low_rate": {
+      "metric": "trust.low_trust_rate_honest",
+      "op": "<=",
+      "value": 0.05,
+      "label": "Low-trust rate on honest runs"
+    }
+  },
+  "targets_check": {
+    "detection_rate": {
+      "value": 0.8444444444444444,
+      "target": 0.9,
+      "op": ">=",
+      "passed": false
+    },
+    "detection_rate_per_type": {
+      "value": 0.5555555555555556,
+      "target": 0.75,
+      "op": ">=",
+      "passed": false
+    },
+    "tick_false_alarm_rate": {
+      "value": 0.0003472222222222222,
+      "target": 0.01,
+      "op": "<=",
+      "passed": true
+    },
+    "false_windows_per_run": {
+      "value": 0.15,
+      "target": 0.5,
+      "op": "<=",
+      "passed": true
+    },
+    "window_precision": {
+      "value": 0.9884488448844885,
+      "target": 0.8,
+      "op": ">=",
+      "passed": true
+    },
+    "median_time_to_detect": {
+      "value": 20.0,
+      "target": 60,
+      "op": "<=",
+      "passed": true
+    },
+    "trust_compromise_detection": {
+      "value": 0.8333333333333334,
+      "target": 0.8,
+      "op": ">=",
+      "passed": true
+    },
+    "trust_false_low_rate": {
+      "value": 4.96031746031746e-05,
+      "target": 0.05,
+      "op": "<=",
+      "passed": true
+    }
+  },
+  "trained_seconds": 18.05,
+  "created_at": "2026-10-11T18:51:59+00:00"
+}

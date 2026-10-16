@@ -1,336 +1,270 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
-  getDashboardSummary,
-  getActivity,
-  getRuns,
-  createRun
-} from '@/lib/api';
+  Activity, ArrowUpRight, FlaskConical, Gauge, History, Layers, Play, ShieldAlert, Siren, Target, Wind,
+} from 'lucide-react';
+import { createRun, getActivity, getDashboardSummary, getRunState, getRuns, getTopology } from '@/lib/api';
+import type { DashboardSummary, RunOut, RunState, Segment, SegmentStateName } from '@/lib/types';
+import { COLORS, TRUST_STYLE, formatDateTime, formatTick, percent } from '@/lib/detection';
 import { KPITile } from '@/components/ui/KPITile';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { LoadingState, ErrorState } from '@/components/ui/States';
+import { ErrorState, LoadingState } from '@/components/ui/States';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/Toast';
-import {
-  Activity,
-  AlertTriangle,
-  ShieldCheck,
-  Gauge,
-  Wind,
-  Thermometer,
-  Play,
-  ArrowUpRight,
-  Zap,
-  History,
-  MapPin,
-  Clock,
-  Layers
-} from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { usePolling } from '@/hooks/usePolling';
+import { PipelineSchematic } from '@/components/detection/PipelineSchematic';
+import { StateLegend } from '@/components/detection/StateLegend';
+
+interface ActivityItem {
+  id: number;
+  action: string;
+  details: string | null;
+  timestamp: string;
+  username: string | null;
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  login: 'Signed in',
+  register: 'Registered',
+  scenario_launched: 'Run launched',
+  run_rescored: 'Run re-scored',
+  model_trained: 'Model trained',
+  model_activated: 'Model activated',
+  password_changed: 'Password changed',
+};
+
+const STATUS_COPY: Record<DashboardSummary['system_status'], { label: string; tone: string }> = {
+  critical: { label: 'Readings in doubt on the line', tone: 'text-pink-800 bg-pink-50 border-pink-200' },
+  warning: { label: 'Anomalous behaviour on the line', tone: 'text-amber-800 bg-amber-50 border-amber-200' },
+  operational: { label: 'All segments normal', tone: 'text-brand-700 bg-brand-50 border-brand-200' },
+  idle: { label: 'No run playing', tone: 'text-gray-600 bg-gray-50 border-gray-200' },
+};
 
 export default function DashboardPage() {
   const { isAdmin } = useAuth();
   const { success, error: toastError } = useToast();
-  const [summary, setSummary] = useState<any>(null);
-  const [activities, setActivities] = useState<any[]>([]);
-  const [recentRuns, setRecentRuns] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [liveState, setLiveState] = useState<RunState | null>(null);
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [runs, setRuns] = useState<RunOut[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
-  const [creatingRun, setCreatingRun] = useState(false);
+  const [starting, setStarting] = useState(false);
 
-  const fetchData = async () => {
+  const fetchAll = useCallback(async () => {
     try {
-      setLoading(true);
+      const [s, list, acts] = await Promise.all([getDashboardSummary(), getRuns(), getActivity(8)]);
+      setSummary(s);
+      setRuns(list);
+      setActivities(acts);
+      setLiveState(s.live ? await getRunState(s.live.run_id) : null);
       setErr(null);
-      const [sumData, actData, runsData] = await Promise.all([
-        getDashboardSummary(),
-        getActivity(10),
-        getRuns()
-      ]);
-      setSummary(sumData);
-      setActivities(actData);
-      setRecentRuns(runsData);
     } catch (e: any) {
-      setErr(e.message || 'Failed to fetch dashboard telemetry');
-    } finally {
-      setLoading(false);
+      setErr(e.message || 'Could not load the dashboard');
     }
-  };
-
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
   }, []);
 
-  const handleLaunchRun = async () => {
-    if (!isAdmin) return;
-    setCreatingRun(true);
+  useEffect(() => {
+    fetchAll();
+    getTopology().then((t) => setSegments(t.segments)).catch(() => undefined);
+  }, [fetchAll]);
+  usePolling(fetchAll, 5000);
+
+  const startNormalRun = async () => {
+    setStarting(true);
     try {
-      const newRun = await createRun({
-        name: `Simulation Run ${Date.now().toString().slice(-4)}`,
-        description: 'Manual live trigger from dashboard',
-      });
-      success('Run Started', `Simulation Run #${newRun.id} is now active.`);
-      fetchData();
+      const run = await createRun({ description: 'Normal operation started from the dashboard' });
+      success('Run started', `${run.name} is playing at ${run.playback_speed}×.`);
+      fetchAll();
     } catch (e: any) {
-      toastError('Failed to start run', e.message);
+      toastError('Could not start a run', e.message);
     } finally {
-      setCreatingRun(false);
+      setStarting(false);
     }
   };
 
-  if (loading && !summary) {
-    return <LoadingState message="Connecting to Master Gas System live telemetry..." />;
-  }
+  if (!summary && err) return <ErrorState message={err} onRetry={fetchAll} />;
+  if (!summary) return <LoadingState message="Loading the dashboard..." />;
 
-  if (err && !summary) {
-    return <ErrorState message={err} onRetry={fetchData} />;
-  }
-
-  // Generate chart sparkline data from active run or mock trends
-  const telemetryTrends = [
-    { time: '00:00', pressure: 72.1, flow: 1450, temp: 42.0 },
-    { time: '04:00', pressure: 74.5, flow: 1520, temp: 43.5 },
-    { time: '08:00', pressure: 71.8, flow: 1390, temp: 45.1 },
-    { time: '12:00', pressure: 76.2, flow: 1610, temp: 48.2 },
-    { time: '16:00', pressure: 75.0, flow: 1580, temp: 46.8 },
-    { time: '20:00', pressure: 73.4, flow: 1490, temp: 44.1 },
-  ];
+  const live = summary.live;
+  const states: Record<string, SegmentStateName> = Object.fromEntries((liveState?.segments ?? []).map((s) => [s.code, s.state]));
+  const captions = Object.fromEntries((liveState?.segments ?? []).map((s) => [s.code, s.pressure_bar !== null ? `${s.pressure_bar.toFixed(1)} bar` : '']));
+  const status = STATUS_COPY[summary.system_status];
+  const perDay = summary.alerts_per_day.map((d) => ({
+    ...d,
+    label: new Date(`${d.date}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
+  }));
+  const detection = summary.detection;
 
   return (
     <div className="space-y-6">
-      {/* Page Header Banner */}
-      <div className="glass-card p-0 overflow-hidden border-brand-200/40">
-        <img
-          src="/Banner.png"
-          alt="Master Gas System Pipeline Network"
-          className="w-full h-auto max-h-[300px] object-cover"
-        />
+      <div className="glass-card p-0 overflow-hidden">
+        <img src="/Banner.png" alt="Sensify pipeline network" className="w-full h-auto max-h-[180px] object-cover" />
       </div>
 
-      {/* Launch Simulation Run Button - moved to top actions */}
-      {isAdmin && (
-        <div className="flex justify-end">
-          <button
-            onClick={handleLaunchRun}
-            disabled={creatingRun}
-            className="btn-primary flex items-center gap-2 text-sm font-semibold"
-          >
-            <Play className="w-4 h-4 fill-white" />
-            {creatingRun ? 'Launching Run...' : 'Launch Simulation Run'}
-          </button>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900">Pipeline overview</h1>
+          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium ${status.tone}`}>{status.label}</span>
         </div>
-      )}
-
-      {/* Primary KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPITile
-          title="Total Pipelines"
-          value={summary?.total_segments || 0}
-          unit="Segments"
-          subtitle="Operational status"
-          icon={Layers}
-          accentColor="#7169d5"
-          status="operational"
-        />
-
-        <KPITile
-          title="Avg System Pressure"
-          value={summary?.avg_pressure_bar?.toFixed(1) || '0.0'}
-          unit="Bar"
-          change={+1.4}
-          changePeriod="nominal range 60-80"
-          icon={Gauge}
-          accentColor="#b09fe8"
-          status="operational"
-        />
-
-        <KPITile
-          title="Total Gas Flow Rate"
-          value={summary?.total_flow_m3h?.toLocaleString() || '0'}
-          unit="m³/h"
-          change={+2.8}
-          icon={Wind}
-          accentColor="#10b981"
-          status="operational"
-        />
-
-        <KPITile
-          title="Active System Incidents"
-          value={summary?.active_incidents || 0}
-          unit="Alerts"
-          subtitle={summary?.active_incidents > 0 ? 'Requires attention' : 'All systems nominal'}
-          icon={AlertTriangle}
-          accentColor={summary?.active_incidents > 0 ? '#ef4444' : '#10b981'}
-          status={summary?.active_incidents > 0 ? 'critical' : 'operational'}
-        />
-      </div>
-
-      {/* Main Content Grid: Telemetry Trends & Network Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Real-time Telemetry Trend Graph */}
-        <div className="lg:col-span-2 glass-card p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-brand-400" /> Network Telemetry Overview
-              </h2>
-              <p className="text-xs text-gray-500">Average pressure (Bar) vs Gas Flow Rate (m³/h) trend</p>
-            </div>
-            <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="flex items-center gap-1 text-brand-400">
-                <span className="w-2 h-2 rounded-full bg-brand-400" /> Pressure
-              </span>
-              <span className="flex items-center gap-1 text-blue-400">
-                <span className="w-2 h-2 rounded-full bg-blue-400" /> Flow Rate
-              </span>
-            </div>
-          </div>
-
-          <div className="h-64 w-full mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={telemetryTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorPressure" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#7169d5" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#7169d5" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorFlow" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#b09fe8" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#b09fe8" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                <XAxis dataKey="time" stroke="#9ca3af" fontSize={11} tickLine={false} />
-                <YAxis yAxisId="left" stroke="#9ca3af" fontSize={11} tickLine={false} domain={[60, 90]} />
-                <YAxis yAxisId="right" orientation="right" stroke="#9ca3af" fontSize={11} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px', fontSize: '12px', color: '#374151' }} />
-                <Area yAxisId="left" type="monotone" dataKey="pressure" stroke="#7169d5" strokeWidth={2} fillOpacity={1} fill="url(#colorPressure)" name="Pressure (Bar)" />
-                <Area yAxisId="right" type="monotone" dataKey="flow" stroke="#b09fe8" strokeWidth={2} fillOpacity={1} fill="url(#colorFlow)" name="Flow Rate (m³/h)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Status Distribution Summary Card */}
-        <div className="glass-card p-6 flex flex-col justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900 mb-1 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-brand-400" /> Pipeline Segment Status
-            </h2>
-            <p className="text-xs text-gray-500 mb-4">Breakdown of network assets health</p>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-brand-500/20">
-                <span className="text-xs font-medium text-brand-500 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(113,105,213,0.6)]" /> Operational
-                </span>
-                <span className="text-sm font-bold font-mono text-gray-900">
-                  {summary?.segment_status_counts?.operational || 0}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-accent-peach/20">
-                <span className="text-xs font-medium text-accent-peach flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-accent-peach" /> Warning Threshold
-                </span>
-                <span className="text-sm font-bold font-mono text-gray-900">
-                  {summary?.segment_status_counts?.warning || 0}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-red-500/20">
-                <span className="text-xs font-medium text-red-400 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" /> Critical Incident
-                </span>
-                <span className="text-sm font-bold font-mono text-gray-900">
-                  {summary?.segment_status_counts?.critical || 0}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <Link
-            href="/map"
-            className="btn-secondary w-full text-xs font-semibold py-2.5 text-center mt-6 flex items-center justify-center gap-2"
-          >
-            <MapPin className="w-4 h-4 text-brand-400" /> Explore GIS Pipeline Map
-          </Link>
-        </div>
-      </div>
-
-      {/* Bottom Section: Active Simulation Runs & System Audit Log */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Active Runs Panel */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-brand-400" /> Simulation Runs
-            </h2>
-            <Link href="/runs" className="text-xs text-brand-400 hover:underline flex items-center gap-1 font-medium">
-              View All Runs <ArrowUpRight className="w-3.5 h-3.5" />
+        {isAdmin && (
+          <div className="flex flex-wrap gap-2">
+            <button onClick={startNormalRun} disabled={starting} className="btn-secondary py-2 px-4 text-sm flex items-center gap-2">
+              <Play className="w-4 h-4" aria-hidden /> {starting ? 'Starting...' : 'Start a normal run'}
+            </button>
+            <Link href="/scenarios" className="btn-primary py-2 px-4 text-sm flex items-center gap-2">
+              <FlaskConical className="w-4 h-4" aria-hidden /> Launch a scenario
             </Link>
           </div>
+        )}
+      </div>
 
-          <div className="space-y-2">
-            {recentRuns.slice(0, 4).map((run) => (
-              <div
-                key={run.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200 hover:border-gray-200 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center font-mono font-bold text-xs text-brand-400">
-                    #{run.id}
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-semibold text-gray-800">{run.name}</h3>
-                    <p className="text-[10px] text-gray-500 font-mono">
-                      Started: {new Date(run.start_time).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <StatusBadge status={run.status} size="sm" />
-                  <Link
-                    href={`/runs/${run.id}`}
-                    className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-50 text-gray-600 transition-colors"
-                  >
-                    <ArrowUpRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Audit Log / Activity Panel */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-              <History className="w-4 h-4 text-brand-400" /> Recent System Activity
+      {live && (
+        <section className="glass-card p-5 space-y-3" aria-label="Live line">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="text-base font-semibold text-gray-900">
+              {summary.active_run ? 'Live: ' : 'Latest run: '}{live.run_name}
+              <span className="ml-2 font-mono tabular text-sm font-normal text-gray-500">{formatTick(live.tick)}</span>
             </h2>
-            <span className="text-xs text-gray-500 font-mono">Real-time log</span>
+            <div className="flex gap-4 text-sm">
+              <Link href={`/runs/${live.run_id}`} className="text-brand-600 hover:underline inline-flex items-center gap-1">Open run <ArrowUpRight className="w-3.5 h-3.5" aria-hidden /></Link>
+              <Link href={`/map?run=${live.run_id}`} className="text-brand-600 hover:underline inline-flex items-center gap-1">Open map <ArrowUpRight className="w-3.5 h-3.5" aria-hidden /></Link>
+            </div>
           </div>
+          {summary.active_run && (
+            <div className="h-1 rounded-full bg-gray-100 overflow-hidden" aria-label={`Playback ${Math.round(summary.active_run.progress * 100)} %`}>
+              <div className="h-full bg-brand-500 transition-all" style={{ width: `${summary.active_run.progress * 100}%` }} />
+            </div>
+          )}
+          {segments.length > 0 && <PipelineSchematic segments={segments} states={states} captions={captions} label="Segment states now" />}
+          <StateLegend counts={live.segments_by_state} />
+        </section>
+      )}
 
-          <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
-            {activities.map((act) => (
-              <div key={act.id} className="flex items-start gap-3 text-xs border-b border-gray-200 pb-2.5 last:border-0">
-                <div className="w-2 h-2 rounded-full bg-brand-400 mt-1 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-gray-600 font-medium">{act.action}</p>
-                  {act.details && <p className="text-[11px] text-gray-500 truncate mt-0.5">{act.details}</p>}
-                </div>
-                <span className="text-[10px] text-gray-500 font-mono whitespace-nowrap">
-                  {new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <KPITile title="Segments monitored" value={summary.total_segments} unit="segments" icon={Layers}
+          subtitle={`${summary.total_runs} runs on record`} />
+        <KPITile title="Average pressure" value={live?.avg_pressure_bar?.toFixed(1) ?? '—'} unit="bar" icon={Gauge}
+          subtitle={live ? `${live.run_name}, ${formatTick(live.tick)}` : 'No run yet'} />
+        <KPITile title="Throughput" value={live?.throughput_m3h?.toFixed(0) ?? '—'} unit="m³/h" icon={Wind}
+          subtitle="Received at Dhahran Terminal" />
+        <KPITile title="Anomalies, 24 h" value={summary.anomaly_count_24h} unit="alerts" icon={Siren}
+          accentColor={summary.anomaly_count_24h ? COLORS.anomalous : '#7169d5'} status={summary.anomaly_count_24h ? 'warning' : 'neutral'}
+          subtitle={`${summary.anomaly_count_total} in total`} />
+        {detection ? (
+          <KPITile title="Detection rate" value={detection.total ? `${detection.detected} of ${detection.total}` : '—'} icon={Target}
+            subtitle={detection.total ? `${percent(detection.rate)} of completed scenario runs flagged` : 'No completed scenario runs yet'} />
+        ) : (
+          <KPITile title="Runs with findings" icon={Target}
+            value={summary.runs_flagged.completed ? `${summary.runs_flagged.flagged} of ${summary.runs_flagged.completed}` : '—'}
+            subtitle={summary.runs_flagged.completed ? 'Completed runs with at least one flagged window' : 'No completed runs yet'} />
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="lg:col-span-2 glass-card p-5" aria-label="Alerts over time">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-base font-semibold text-gray-900">Alerts over the last 14 days</h2>
+            <ul className="flex gap-4 text-xs text-gray-600" aria-label="Legend">
+              <li className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.anomalous }} /> Anomaly</li>
+              <li className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.lowTrust }} /> Low trust</li>
+            </ul>
           </div>
-        </div>
+          <div className="h-56 mt-3">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={perDay} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
+                <CartesianGrid stroke={COLORS.grid} vertical={false} />
+                <XAxis dataKey="label" stroke={COLORS.muted} fontSize={11} tickLine={false} interval="preserveStartEnd" />
+                <YAxis allowDecimals={false} stroke={COLORS.muted} fontSize={11} tickLine={false} />
+                <Tooltip cursor={{ fill: '#F3F4F6' }} />
+                <Bar dataKey="anomaly" name="Anomaly" stackId="a" fill={COLORS.anomalous} isAnimationActive={false} />
+                <Bar dataKey="low_trust" name="Low trust" stackId="a" fill={COLORS.lowTrust} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        <section className="glass-card p-5" aria-label="Telemetry trust alerts">
+          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4" style={{ color: COLORS.lowTrust }} aria-hidden /> Readings in doubt
+          </h2>
+          {summary.trust_alerts.length > 0 ? (
+            <ul className="mt-3 space-y-3">
+              {summary.trust_alerts.map((t) => (
+                <li key={t.segment_id}>
+                  <Link href={`/map?run=${t.run_id}&seg=${t.code}`} className="block rounded-xl border border-pink-200 bg-pink-50/40 p-3 hover:border-pink-300">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-gray-900">{t.code} {t.name}</span>
+                      <span className="text-xs font-semibold" style={{ color: TRUST_STYLE[t.trust_status].color }}>{t.trust_status}</span>
+                    </div>
+                    {t.top_factor && <p className="mt-1 text-sm text-gray-600 leading-snug">{t.top_factor.detail}</p>}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : summary.recent_trust_alerts.length > 0 ? (
+            <>
+              <p className="mt-1 text-sm text-gray-500">Nothing in doubt right now. The most recent:</p>
+              <ul className="mt-3 space-y-2">
+                {summary.recent_trust_alerts.map((a) => (
+                  <li key={a.id}>
+                    <Link href={`/runs/${a.run_id}?t=${a.start_tick}&seg=${a.segment_code}`} className="block rounded-xl border border-gray-200 p-3 hover:border-brand-300">
+                      <p className="text-sm font-semibold text-gray-900">{a.segment_code} in {a.run_name}</p>
+                      <p className="text-xs text-gray-500 font-mono tabular">{formatTick(a.start_tick)}</p>
+                      <p className="mt-1 text-xs text-gray-600 line-clamp-2">{a.summary}</p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-gray-500">No segment&apos;s readings have been in doubt.</p>
+          )}
+        </section>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section className="glass-card p-5" aria-label="Recent runs">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2"><Activity className="w-4 h-4 text-brand-500" aria-hidden /> Recent runs</h2>
+            <Link href="/runs" className="text-sm text-brand-600 hover:underline">All runs</Link>
+          </div>
+          <ul className="mt-3 divide-y divide-gray-100">
+            {runs.slice(0, 5).map((r) => (
+              <li key={r.id}>
+                <Link href={`/runs/${r.id}`} className="flex items-center justify-between gap-3 py-2.5 hover:bg-gray-50 rounded-lg px-2 -mx-2">
+                  <div>
+                    <p className="font-medium text-gray-900">{r.name}</p>
+                    <p className="text-xs text-gray-500">{formatDateTime(r.started_at)}</p>
+                  </div>
+                  {r.status === 'active'
+                    ? <StatusBadge status="active" label={`Playing ${Math.round(r.progress * 100)} %`} size="sm" />
+                    : <StatusBadge status="completed" size="sm" />}
+                </Link>
+              </li>
+            ))}
+            {runs.length === 0 && <li className="py-3 text-sm text-gray-500">No runs yet.</li>}
+          </ul>
+        </section>
+
+        <section className="glass-card p-5" aria-label="Recent activity">
+          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2"><History className="w-4 h-4 text-brand-500" aria-hidden /> Recent activity</h2>
+          <ul className="mt-3 space-y-3">
+            {activities.map((a) => (
+              <li key={a.id} className="flex items-start justify-between gap-3 text-sm">
+                <div>
+                  <p className="font-medium text-gray-900">{ACTION_LABEL[a.action] ?? a.action.replace('_', ' ')}{a.username ? ` by ${a.username}` : ''}</p>
+                  {a.details && <p className="text-xs text-gray-500">{a.details}</p>}
+                </div>
+                <span className="text-xs text-gray-400 whitespace-nowrap">{formatDateTime(a.timestamp)}</span>
+              </li>
+            ))}
+            {activities.length === 0 && <li className="text-sm text-gray-500">Nothing yet.</li>}
+          </ul>
+        </section>
       </div>
     </div>
   );

@@ -8,7 +8,13 @@ A pressure drop can indicate a physical disturbance, a faulty sensor, an expecte
 
 **Project:** SE 499 Senior Project, Semester 261, Prince Sultan University, College of Computer and Information Sciences, Software Engineering Department.  
 **Supervisor:** Dr. Mona Alkanhal.  
-**Development status:** Sprint 1 in progress; Sprints 2 and 3 planned. Features described below are the charter baseline and are not claims of completed implementation.
+**Development status:** Sprint 2 source is available. The charter roadmap below distinguishes delivered source from acceptance; story completion is tracked on the Scrum board. Sprint 3 investigation and reporting work remains planned.
+
+## Current application
+
+The Sprint 2 implementation includes six simulated pipeline segments, reproducible normal/fault/cyber scenarios, a per-segment Isolation Forest detection pipeline, threshold comparison, process-consistency and telemetry-trust checks, model training/version management, alerts, and synchronized run playback. The web application uses Next.js / React; the API uses FastAPI / SQLAlchemy with local SQLite storage.
+
+See [setup and verification](docs/SETUP.md) to run it, and [model training and evaluation](backend/ml/README.md) for data generation, model activation, and known limitations. Generated datasets, trained binaries, databases, credentials, dependencies, and caches are excluded; the setup regenerates them locally. The [supplied Sprint 2 evaluation](docs/evaluation/sprint-2-v1/report.md) records six of eight development targets met, including the two misses; fresh training reproduced those metrics during import verification. These are separate from the charter acceptance targets below.
 
 ## Planned capabilities
 
@@ -64,12 +70,12 @@ The planned system consists of a role-based web application, a protected backend
 
 ## Scrum roadmap
 
-The backlog follows the charter's 21 user stories. Each issue retains its story ID, priority, and acceptance criteria. Sprint status reflects the requested planning state; acceptance criteria remain unchecked until verified.
+The backlog follows the charter's 21 user stories. Each issue retains its story ID, priority, and acceptance criteria. Source delivery does not by itself establish that a story meets every acceptance criterion. Use the live board for current story status and acceptance evidence.
 
 | Sprint | Charter window | Status | Stories | Completion milestone |
 | --- | --- | --- | --- | --- |
-| 1 — Platform Foundation | Weeks 2–5 | In Progress | US-01–US-07 | Users can log in, open a run, and explore pipeline conditions with permissions enforced. |
-| 2 — Detection and Evidence | Weeks 5–9 | Todo | US-08–US-14 | An Admin can launch a scenario, and both roles can inspect anomalies and supporting evidence. |
+| 1 — Platform Foundation | Weeks 2–5 | Source delivered | US-01–US-07 | Users can log in, open a run, and explore pipeline conditions with permissions enforced. |
+| 2 — Detection and Evidence | Weeks 5–9 | Source delivered | US-08–US-14 | An Admin can launch a scenario, and both roles can inspect anomalies and supporting evidence. |
 | 3 — Investigation and Evaluation | Weeks 9–13 | Todo | US-15–US-21 | Users can follow an incident from detection to explanation and review comparative results. |
 
 Browse the [user-story issues](../../issues) and the repository's [Projects tab](../../projects) for the Scrum board.
@@ -111,7 +117,9 @@ The charter proposes the following work-area leads; all members also contribute 
 
 ## Development and contribution
 
-The Sprint 1 source uses a Next.js / React frontend and a FastAPI / SQLAlchemy backend with a locally generated SQLite database. See [local setup instructions](docs/SETUP.md) for installation, environment configuration, sample accounts, and configuration tests. Configure your own secrets using the committed `.env.example` templates; local environment files, databases, dependencies, and build caches are excluded from Git.
+See the [Sprint 2 import and verification record](docs/SPRINT_2_IMPORT.md) for packaging changes, test results and remaining dependency warnings.
+
+The Sprint 2 source uses a Next.js / React frontend and a FastAPI / SQLAlchemy backend with a locally generated SQLite database. See [local setup instructions](docs/SETUP.md) for installation, environment configuration, initial model training, local accounts, and automated checks. Configure your own secrets using the committed `.env.example` templates; local environment files, databases, dependencies, and build caches are excluded from Git.
 
 - Link branches and pull requests to the relevant user-story issue.
 - Review the story's acceptance criteria before implementation and record validation evidence before marking it Done.

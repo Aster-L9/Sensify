@@ -226,3 +226,65 @@
 .recharts-tooltip-label {
   @apply !text-gray-700 !font-medium;
 }
+/* ── Detection components ────────────────────────────────────────────── */
+.schematic-seg:focus {
+  outline: none;
+}
+.schematic-seg:focus-visible .schematic-hit {
+  stroke: #4b4aa3;
+  stroke-width: 2.5;
+}
+/* One moment of motion: a segment that turns abnormal pulses twice, then settles. */
+.schematic-halo {
+  opacity: 0;
+  animation: schematic-halo-pulse 1.4s ease-out 2;
+}
+@keyframes schematic-halo-pulse {
+  0% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .schematic-halo {
+    animation: none;
+    opacity: 0.35;
+  }
+}
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+.playback-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 24px;
+}
+.playback-range::-webkit-slider-runnable-track {
+  height: 6px;
+  background: transparent;
+}
+.playback-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid #7169d5;
+  box-shadow: 0 1px 2px rgba(35, 40, 56, 0.25);
+}
+.playback-range::-moz-range-track {
+  height: 6px;
+  background: transparent;
+}
+.playback-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid #7169d5;
+}
+.playback-range:focus-visible {
+  outline: 2px solid #4b4aa3;
+  outline-offset: 2px;
+  border-radius: 6px;
+}

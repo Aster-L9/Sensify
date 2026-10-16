@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/Toast';
-import { Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<'admin' | 'analyst'>('admin');
+  const [analystEmail, setAnalystEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { user, login } = useAuth();
@@ -29,7 +31,8 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    const email = selectedRole === 'admin' ? 'admin@sensify.local' : 'analyst@sensify.local';
+    // Admin signs in to the pre-seeded admin account; analysts use their own email
+    const email = selectedRole === 'admin' ? 'admin@sensify.local' : analystEmail;
 
     try {
       await login(email, password);
@@ -97,6 +100,24 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Email Input (analyst accounts only) */}
+            {selectedRole === 'analyst' && (
+              <div>
+                <label className="input-label">Email Address</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-gray-500 absolute left-3.5 top-3.5" />
+                  <input
+                    type="email"
+                    required
+                    value={analystEmail}
+                    onChange={(e) => setAnalystEmail(e.target.value)}
+                    placeholder="analyst@sensify.local"
+                    className="input-field pl-10"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Password Input */}
             <div>
               <label className="input-label">Account Password</label>
@@ -128,6 +149,15 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          {selectedRole === 'analyst' && (
+            <p className="text-xs text-center text-gray-500 mt-6">
+              Don&apos;t have an account?{' '}
+              <Link href="/register" className="text-brand-400 hover:underline font-semibold">
+                Sign Up
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </div>

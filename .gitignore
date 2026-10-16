@@ -57,3 +57,8 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Reproducible simulation data and trained runtime artifacts
+/backend/ml/data/
+/backend/model_store/
+*.joblib

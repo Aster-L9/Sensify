@@ -12,7 +12,10 @@ import {
   User,
   Shield,
   Database,
-  Radio
+  Radio,
+  BellRing,
+  FlaskConical,
+  BrainCircuit
 } from 'lucide-react';
 
 export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (v: boolean) => void }) {
@@ -23,7 +26,14 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Pipeline Map', href: '/map', icon: Map },
     { name: 'Simulation Runs', href: '/runs', icon: Activity },
-    ...(isAdmin ? [{ name: 'User Management', href: '/admin/users', icon: Users }] : []),
+    { name: 'Alerts', href: '/alerts', icon: BellRing },
+    ...(isAdmin
+      ? [
+          { name: 'Scenario Builder', href: '/scenarios', icon: FlaskConical },
+          { name: 'Models', href: '/models', icon: BrainCircuit },
+          { name: 'User Management', href: '/admin/users', icon: Users },
+        ]
+      : []),
     { name: 'My Profile', href: '/profile', icon: User },
   ];
 
@@ -44,7 +54,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
           <h1 className="font-bold text-gray-900 tracking-wide text-sm leading-none">
             Sensify
           </h1>
-          <span className="text-[10px] text-gray-500 font-mono">v1.0.0-sprint1</span>
+          <span className="text-[10px] text-gray-500 font-mono">v1.1.0</span>
         </div>
       </div>
 
@@ -58,7 +68,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
           <p className="text-xs font-semibold text-gray-700 truncate flex items-center gap-1">
             <Radio className="w-3 h-3 text-brand-500" /> Pipeline Telemetry
           </p>
-          <p className="text-[10px] text-gray-500 truncate font-mono">Saudi Master Gas System</p>
+          <p className="text-[10px] text-gray-500 truncate font-mono">Sensify Pipeline Network</p>
         </div>
       </div>
 

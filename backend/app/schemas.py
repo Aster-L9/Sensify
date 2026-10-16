@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ── Auth Schemas ───────────────────────────────────────────────────────────────
@@ -33,6 +33,8 @@ class PasswordChange(BaseModel):
 
 # ── User Schemas ───────────────────────────────────────────────────────────────
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     username: str
     email: str
@@ -40,9 +42,6 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
     last_login: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 
 class UserUpdate(BaseModel):
@@ -59,21 +58,21 @@ class UserCreateAdmin(BaseModel):
 
 # ── Segment Schemas ────────────────────────────────────────────────────────────
 class SegmentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
+    code: str
     name: str
     segment_type: str
+    order_index: int
     lat_start: float
     lon_start: float
     lat_end: float
     lon_end: float
     length_km: float
-    diameter_inches: float
-    max_pressure_psi: float
-    state: str
-    order_index: int
-
-    class Config:
-        from_attributes = True
+    diameter_mm: float
+    design_pressure_bar: float
+    equipment: Optional[str] = None
 
 
 class TopologyResponse(BaseModel):
@@ -82,63 +81,113 @@ class TopologyResponse(BaseModel):
     segment_count: int
 
 
-# ── Run Schemas ────────────────────────────────────────────────────────────────
+# ── Scenario / Run Schemas ─────────────────────────────────────────────────────
+class ScenarioLaunch(BaseModel):
+    scenario_type: str
+    method: Optional[str] = None
+    target_segment: Optional[str] = None
+    magnitude: Optional[float] = None
+    variable: Optional[str] = None
+    onset_min: Optional[float] = None
+    ramp_min: Optional[float] = None
+    active_min: Optional[float] = None
+    recovery: Optional[bool] = None
+    duration_min: Optional[float] = None
+    playback_speed: Optional[int] = None
+    seed: Optional[int] = None
+    name: Optional[str] = Field(default=None, max_length=100)
+    description: Optional[str] = Field(default=None, max_length=500)
+
+
 class RunCreate(BaseModel):
+    """Launch a normal-operation run (the dashboard's quick launch)."""
+    name: Optional[str] = Field(default=None, max_length=100)
+    description: Optional[str] = Field(default=None, max_length=500)
+    seed: Optional[int] = None
+    playback_speed: Optional[int] = None
+    duration_min: Optional[float] = None
+
+
+# ── Telemetry / State / Event Schemas ──────────────────────────────────────────
+class TelemetryPoint(BaseModel):
+    run_id: int
+    segment_id: int
+    segment_code: str
+    tick: int
+    timestamp: datetime
+    pressure_bar: float
+    flow_m3h: float
+    temperature_c: float
+    valve_open_pct: Optional[float] = None
+    pump_speed_pct: Optional[float] = None
+    valve_state: Optional[str] = None
+    equipment_state: Optional[str] = None
+
+
+class SegmentStateOut(BaseModel):
+    segment_id: int
+    code: str
     name: str
-    description: Optional[str] = None
-    config_json: Optional[str] = "{}"
-    seed: Optional[int] = 42
+    segment_type: str
+    pressure_bar: Optional[float] = None
+    flow_m3h: Optional[float] = None
+    temperature_c: Optional[float] = None
+    valve_open_pct: Optional[float] = None
+    pump_speed_pct: Optional[float] = None
+    valve_state: Optional[str] = None
+    equipment_state: Optional[str] = None
+    anomaly_score: Optional[float] = None
+    ml_flag: bool = False
+    trust_score: Optional[float] = None
+    trust_status: Optional[str] = None
+    state: str = "normal"
+    top_factor: Optional[dict] = None
+    factors: List[dict] = []
 
 
+class RunStateOut(BaseModel):
+    run_id: int
+    status: str
+    tick: int
+    revealed_ticks: int
+    duration_ticks: int
+    timestamp: datetime
+    segments: List[SegmentStateOut]
+    open_alerts: int = 0
+
+
+class EventOut(BaseModel):
+    id: int
+    run_id: int
+    tick: int
+    timestamp: datetime
+    segment_id: Optional[int] = None
+    segment_code: Optional[str] = None
+    source: str
+    category: str
+    event_type: str
+    authorized: str
+    severity: str
+    details: Optional[str] = None
+    origin: str
+    observable: bool
+
+
+# ── Dashboard Schemas (legacy shape; extended in the dashboard task) ──────────
 class RunResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     description: Optional[str] = None
     status: str
-    config_json: Optional[str] = None
     created_by: Optional[int] = None
     creator_username: Optional[str] = None
     created_at: datetime
     ended_at: Optional[datetime] = None
     seed: int
 
-    class Config:
-        from_attributes = True
 
-
-class RunStateResponse(BaseModel):
-    run_id: int
-    status: str
-    segments: List[dict]
-    telemetry_count: int
-    latest_telemetry: Optional[datetime] = None
-
-
-# ── Telemetry Schemas ──────────────────────────────────────────────────────────
-class TelemetryResponse(BaseModel):
-    id: int
-    run_id: int
-    segment_id: int
-    timestamp: datetime
-    pressure_psi: float
-    flow_rate_bph: float
-    temperature_f: float
-    is_ground_truth: bool
-
-    class Config:
-        from_attributes = True
-
-
-class TelemetryQuery(BaseModel):
-    run_id: int
-    segment_id: Optional[int] = None
-    from_time: Optional[datetime] = None
-    to_time: Optional[datetime] = None
-    ground_truth: Optional[bool] = None
-    limit: int = 500
-
-
-# ── Dashboard Schemas ──────────────────────────────────────────────────────────
 class DashboardSummary(BaseModel):
     total_runs: int
     active_runs: int
@@ -152,6 +201,8 @@ class DashboardSummary(BaseModel):
 
 # ── Activity Schemas ───────────────────────────────────────────────────────────
 class ActivityResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: Optional[int] = None
     username: Optional[str] = None
@@ -160,6 +211,3 @@ class ActivityResponse(BaseModel):
     entity_id: Optional[int] = None
     timestamp: datetime
     details: Optional[str] = None
-
-    class Config:
-        from_attributes = True

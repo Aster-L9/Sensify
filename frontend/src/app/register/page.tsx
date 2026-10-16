@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const { error, success } = useToast();
@@ -18,6 +19,10 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      error('Registration Failed', 'Passwords do not match');
+      return;
+    }
     setLoading(true);
     try {
       await register(username, email, password);
@@ -42,7 +47,7 @@ export default function RegisterPage() {
             Create Account
           </h1>
           <p className="text-xs text-gray-500 mt-1 font-mono">
-            Access Sensify Pipeline Intelligence Dashboard
+            Create an analyst account for the Sensify dashboard
           </p>
         </div>
 
@@ -76,7 +81,7 @@ export default function RegisterPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="analyst@aramco.com"
+                  placeholder="analyst@sensify.local"
                   className="input-field pl-10"
                 />
               </div>
@@ -92,7 +97,23 @@ export default function RegisterPage() {
                   minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="At least 6 characters"
+                  className="input-field pl-10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="input-label">Confirm Password</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-gray-500 absolute left-3.5 top-3.5" />
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter password"
                   className="input-field pl-10"
                 />
               </div>

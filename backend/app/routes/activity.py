@@ -22,7 +22,7 @@ def get_activity(
     if user.role != "admin":
         query = query.filter(
             ActivityLog.action.in_([
-                "run_created", "run_completed", "run_stopped",
+                "scenario_launched", "run_rescored", "run_created", "run_completed", "run_stopped",
             ])
         )
 
