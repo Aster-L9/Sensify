@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  * {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+@layer components {
+  /* ── Glass Card ────────────────────────────────────────────────── */
+  .glass-card {
+    @apply bg-white border border-gray-200 rounded-2xl shadow-sm;
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300 hover:border-brand-500/30 hover:shadow-lg hover:shadow-brand-500/5;
+  }
+
+  /* ── KPI Tile ─────────────────────────────────────────────────── */
+  .kpi-tile {
+    @apply glass-card p-5 flex flex-col gap-2 relative overflow-hidden;
+  }
+
+  .kpi-tile::before {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-[2px];
+    background: linear-gradient(90deg, transparent, var(--kpi-accent, #7169d5), transparent);
+  }
+
+  /* ── Status Colors ────────────────────────────────────────────── */
+  .status-operational {
+    @apply text-status-operational;
+  }
+  .status-warning {
+    @apply text-status-warning;
+  }
+  .status-critical {
+    @apply text-status-critical;
+  }
+  .status-offline {
+    @apply text-status-offline;
+  }
+  .status-maintenance {
+    @apply text-status-maintenance;
+  }
+
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block;
+  }
+  .status-dot-operational {
+    @apply status-dot bg-status-operational shadow-[0_0_8px_rgba(113,105,213,0.6)];
+  }
+  .status-dot-warning {
+    @apply status-dot bg-status-warning shadow-[0_0_8px_rgba(233,170,147,0.6)];
+  }
+  .status-dot-critical {
+    @apply status-dot bg-status-critical shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse;
+  }
+  .status-dot-offline {
+    @apply status-dot bg-status-offline;
+  }
+
+  /* ── Buttons ──────────────────────────────────────────────────── */
+  .btn-primary {
+    @apply px-5 py-2.5 bg-brand-500 text-white font-semibold rounded-xl
+           hover:bg-brand-400 active:bg-brand-600
+           transition-all duration-200
+           shadow-sm shadow-brand-500/20
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-5 py-2.5 bg-white text-gray-700 font-medium rounded-xl
+           border border-gray-200
+           hover:bg-gray-50 hover:border-gray-300
+           transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 text-gray-500 font-medium rounded-xl
+           hover:bg-gray-100 hover:text-gray-900
+           transition-all duration-200;
+  }
+
+  .btn-danger {
+    @apply px-5 py-2.5 bg-red-500/10 text-red-400 font-medium rounded-xl
+           border border-red-500/20
+           hover:bg-red-500/20 hover:border-red-500/40
+           transition-all duration-200;
+  }
+
+  /* ── Input ────────────────────────────────────────────────────── */
+  .input-field {
+    @apply w-full px-4 py-3 bg-white border border-gray-200 rounded-xl
+           text-gray-900 placeholder-gray-400
+           focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
+           transition-all duration-200;
+  }
+
+  .input-label {
+    @apply block text-sm font-medium text-gray-600 mb-1.5;
+  }
+
+  /* ── Sidebar ──────────────────────────────────────────────────── */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-600
+           hover:bg-gray-100 hover:text-gray-900
+           transition-all duration-200 text-sm font-medium;
+  }
+
+  .sidebar-link-active {
+    @apply sidebar-link bg-brand-500/10 text-brand-400 border-l-2 border-brand-500;
+  }
+
+  /* ── Table ────────────────────────────────────────────────────── */
+  .data-table {
+    @apply w-full text-sm;
+  }
+  .data-table thead {
+    @apply border-b border-gray-200;
+  }
+  .data-table th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider;
+  }
+  .data-table td {
+    @apply px-4 py-3 text-gray-700;
+  }
+  .data-table tbody tr {
+    @apply border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150;
+  }
+
+  /* ── Toast ────────────────────────────────────────────────────── */
+  .toast {
+    @apply fixed bottom-6 right-6 z-[100] animate-slide-in-up;
+  }
+  .toast-success {
+    @apply glass-card border-brand-500/30 px-5 py-3 flex items-center gap-3;
+  }
+  .toast-error {
+    @apply glass-card border-red-500/30 px-5 py-3 flex items-center gap-3;
+  }
+
+  /* ── Skeleton ─────────────────────────────────────────────────── */
+  .skeleton {
+    @apply bg-gray-200 rounded-lg animate-pulse;
+  }
+
+  /* ── Badge ────────────────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+  .badge-operational {
+    @apply badge bg-brand-500/10 text-brand-500 border border-brand-500/20;
+  }
+  .badge-warning {
+    @apply badge bg-accent-peach/10 text-accent-peach border border-accent-peach/20;
+  }
+  .badge-critical {
+    @apply badge bg-red-500/10 text-red-400 border border-red-500/20;
+  }
+  .badge-offline {
+    @apply badge bg-gray-500/10 text-gray-400 border border-gray-500/20;
+  }
+  .badge-active {
+    @apply badge bg-blue-500/10 text-blue-400 border border-blue-500/20;
+  }
+  .badge-completed {
+    @apply badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
+  }
+  .badge-admin {
+    @apply badge bg-purple-500/10 text-purple-400 border border-purple-500/20;
+  }
+  .badge-analyst {
+    @apply badge bg-cyan-500/10 text-cyan-400 border border-cyan-500/20;
+  }
+}
+
+/* ── Leaflet Overrides ──────────────────────────────────────────── */
+.leaflet-container {
+  @apply bg-gray-100 rounded-2xl;
+}
+.leaflet-control-zoom a {
+  @apply !bg-white !text-gray-600 !border-gray-200;
+}
+.leaflet-control-zoom a:hover {
+  @apply !bg-gray-100;
+}
+.leaflet-popup-content-wrapper {
+  @apply !bg-white !text-gray-900 !rounded-xl !shadow-lg !border border-gray-200;
+}
+.leaflet-popup-tip {
+  @apply !bg-white;
+}
+
+/* ── Chart Tooltip ──────────────────────────────────────────────── */
+.recharts-default-tooltip {
+  @apply !bg-white/95 !border-gray-200 !rounded-xl !shadow-lg backdrop-blur-sm;
+}
+.recharts-tooltip-label {
+  @apply !text-gray-700 !font-medium;
+}

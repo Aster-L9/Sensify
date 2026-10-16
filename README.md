@@ -111,7 +111,7 @@ The charter proposes the following work-area leads; all members also contribute 
 
 ## Development and contribution
 
-The implementation stack and executable setup instructions will be documented as the foundation is established. This repository currently starts with project documentation and the Scrum backlog.
+The Sprint 1 source uses a Next.js / React frontend and a FastAPI / SQLAlchemy backend with a locally generated SQLite database. See [local setup instructions](docs/SETUP.md) for installation, environment configuration, sample accounts, and configuration tests. Configure your own secrets using the committed `.env.example` templates; local environment files, databases, dependencies, and build caches are excluded from Git.
 
 - Link branches and pull requests to the relevant user-story issue.
 - Review the story's acceptance criteria before implementation and record validation evidence before marking it Done.
