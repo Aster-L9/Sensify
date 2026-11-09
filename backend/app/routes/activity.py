@@ -23,6 +23,7 @@ def get_activity(
         query = query.filter(
             ActivityLog.action.in_([
                 "scenario_launched", "run_rescored", "run_created", "run_completed", "run_stopped",
+                "incident_resolved", "incident_reopened", "demo_started",
             ])
         )
 

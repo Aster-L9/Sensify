@@ -1,10 +1,11 @@
-// Detection visual language: colours, labels and icons for segment states.
+// Detection visual language (docs/sprint2/design.md §9.1).
 //
 // Colour means abnormal: a normal segment keeps the calm brand indigo, an anomalous
 // one turns amber, and one whose readings can't be trusted turns rose with a dashed
 // line. Colour is never the only cue: every state also has a pattern, an icon and a word.
+// A segment without enough readings to judge is slate and dotted: it is neither normal nor flagged.
 
-import { AlertTriangle, CheckCircle2, ShieldAlert, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, CircleDashed, ShieldAlert, type LucideIcon } from 'lucide-react';
 import type { EventCategory, SegmentStateName, Severity, TrustStatus } from './types';
 
 export const TICK_SECONDS = 5;
@@ -18,6 +19,7 @@ export const COLORS = {
   anomalousText: '#B45309',
   lowTrust: '#BE185D',
   review: '#DB2777',
+  insufficient: '#64748B',
   threshold: '#9CA3AF',
   medium: '#D97706',
   high: '#EA580C',
@@ -61,6 +63,15 @@ export const STATE_STYLE: Record<SegmentStateName, StateStyle> = {
     weight: 7,
     icon: ShieldAlert,
   },
+  insufficient: {
+    label: 'Not enough data',
+    description: 'Too few readings arrived to judge this segment',
+    color: COLORS.insufficient,
+    textColor: '#475569',
+    dash: '2 6',
+    weight: 5,
+    icon: CircleDashed,
+  },
 };
 
 export const SEVERITY_STYLE: Record<Severity, { label: string; color: string; soft: string }> = {
@@ -73,6 +84,7 @@ export const TRUST_STYLE: Record<TrustStatus, { label: string; color: string; so
   Supported: { label: 'Supported', color: '#4B4AA3', soft: '#EEF0FB' },
   Review: { label: 'Review', color: '#BE185D', soft: '#FCE7F3' },
   Contradicted: { label: 'Contradicted', color: '#9D174D', soft: '#FBCFE8' },
+  Insufficient: { label: 'Not enough data', color: '#475569', soft: '#F1F5F9' },
 };
 
 export const CATEGORY_STYLE: Record<EventCategory, { label: string; color: string; shape: 'square' | 'triangle' | 'diamond' | 'circle' }> = {

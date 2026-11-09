@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user, require_admin
+from app.auth import require_admin
 from app.database import get_db
 from app.models import Segment, User
 from app.schemas import ScenarioLaunch
@@ -15,7 +15,7 @@ DEFAULTS = {"magnitude": 0.6, "onset_min": 6, "ramp_min": 1, "active_min": 6, "r
 
 
 @router.get("/")
-def get_catalog(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def get_catalog(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     segments = db.query(Segment).order_by(Segment.order_index).all()
     return {
         "types": CATALOG,

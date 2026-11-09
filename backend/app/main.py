@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from contextlib import asynccontextmanager
@@ -14,7 +15,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, SessionLocal, Base
 from app.migrate import migrate_if_needed
 from app.seed import seed_database
-from app.services.registry import fail_interrupted_training
+from app.services.accounts import unsupported_role_users
+from app.services.registry import (
+    backfill_validation_metrics, fail_interrupted_training, normalise_artifact_paths,
+)
 
 from app.routes.auth import router as auth_router
 from app.routes.users import router as users_router
@@ -27,6 +31,12 @@ from app.routes.scenarios import router as scenarios_router
 from app.routes.run_analysis import router as run_analysis_router
 from app.routes.ml_models import router as ml_models_router
 from app.routes.alerts import router as alerts_router
+from app.routes.incidents import router as incidents_router
+from app.services.investigation import ensure_incidents
+from app.services.evaluations import ensure_seed_evaluation, fail_interrupted_evaluations
+from app.routes.evaluation import router as evaluation_router
+from app.routes.reports import router as reports_router
+from app.routes.demo import router as demo_router
 
 
 @asynccontextmanager
@@ -40,6 +50,16 @@ async def lifespan(app: FastAPI):
     try:
         fail_interrupted_training(db)
         seed_database(db)
+        ensure_incidents(db)
+        fail_interrupted_evaluations(db)
+        ensure_seed_evaluation(db)
+        backfill_validation_metrics(db)
+        normalise_artifact_paths(db)
+        for user in unsupported_role_users(db):
+            # Reported, not rewritten: an administrator decides each account's role (handover DH-04).
+            logging.getLogger("sensify").warning(
+                "User #%s has unsupported role %r; it has no administrator access until an administrator "
+                "assigns analyst or admin", user.id, user.role)
     finally:
         db.close()
 
@@ -73,6 +93,10 @@ app.include_router(scenarios_router)
 app.include_router(run_analysis_router)
 app.include_router(ml_models_router)
 app.include_router(alerts_router)
+app.include_router(incidents_router)
+app.include_router(evaluation_router)
+app.include_router(reports_router)
+app.include_router(demo_router)
 
 
 @app.get("/")

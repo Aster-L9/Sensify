@@ -1,5 +1,5 @@
 """
-Scenario catalog, launch-parameter validation and the effect envelope.
+Scenario catalog, launch-parameter validation and the effect envelope (spec §3.4).
 """
 import secrets
 from dataclasses import asdict, dataclass

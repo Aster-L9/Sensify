@@ -1,8 +1,19 @@
 """
 Run service: launch a scenario run (simulate + store), and reveal it over time.
 
-A run is simulated in full at launch, then revealed at playback speed:
+A run is simulated in full at launch, then revealed at playback speed (spec §3.7):
 every read clamps to the ticks revealed so far.
+
+Playback control (Sprint 03 handover DH-02). The reveal position is derived from the
+wall clock, minus the time spent paused:
+
+- pause freezes the position (`paused_at`); every endpoint and viewer sees the same tick,
+  and it survives a restart because it is stored on the run row;
+- resume adds the paused time to `paused_seconds`, so playback continues from the same
+  tick without a jump;
+- reset rewinds the same run to T+00:00 and leaves it paused. Its seed, settings, stored
+  measurements and analysis are kept unchanged, so the run replays identically; reads
+  clamp to the new position, so nothing beyond it (alerts, incidents) is shown.
 """
 import json
 import math
@@ -27,12 +38,28 @@ def utcnow() -> datetime:
     return datetime.utcnow()
 
 
+class PlaybackError(Exception):
+    """A playback action that does not apply to the run's current state."""
+
+
+def _played_seconds(run: Run, now: datetime) -> float:
+    """Wall-clock seconds of playback so far: time since start, less time spent paused."""
+    if run.paused_at is not None:
+        now = run.paused_at
+    return max((now - run.started_at).total_seconds() - (run.paused_seconds or 0.0), 0.0)
+
+
 def reveal(run: Run, now: datetime | None = None) -> tuple[int, str]:
     """(revealed_ticks, status) for a run at wall-clock time `now`."""
     now = now or utcnow()
-    elapsed = max((now - run.started_at).total_seconds(), 0.0)
+    elapsed = _played_seconds(run, now)
     revealed = min(run.duration_ticks, math.floor(elapsed * run.playback_speed / run.tick_seconds) + 1)
-    status = RunStatus.completed.value if revealed >= run.duration_ticks else RunStatus.active.value
+    if revealed >= run.duration_ticks:
+        status = RunStatus.completed.value
+    elif run.paused_at is not None:
+        status = RunStatus.paused.value
+    else:
+        status = RunStatus.active.value
     return revealed, status
 
 
@@ -42,8 +69,59 @@ def refresh_status(db: Session, run: Run) -> None:
         run.status = status
         if status == RunStatus.completed.value:
             playback = run.duration_ticks * run.tick_seconds / run.playback_speed
-            run.ended_at = run.started_at + timedelta(seconds=playback)
+            run.ended_at = run.started_at + timedelta(seconds=playback + (run.paused_seconds or 0.0))
         db.commit()
+
+
+def _log(db: Session, user: User, run: Run, action: str, verb: str, tick: int) -> None:
+    secs = tick * run.tick_seconds
+    db.add(ActivityLog(user_id=user.id, action=action, entity_type="run", entity_id=run.id,
+                       details=f"{verb} run: {run.name} at T+{secs // 60:02d}:{secs % 60:02d}", timestamp=utcnow()))
+
+
+def pause_run(db: Session, run: Run, user: User) -> Run:
+    refresh_status(db, run)
+    if run.status != RunStatus.active.value:
+        raise PlaybackError("Only a playing run can be paused" if run.status != RunStatus.paused.value
+                            else "This run is already paused")
+    now = utcnow()
+    run.paused_at = now
+    run.status = RunStatus.paused.value
+    _log(db, user, run, "run_paused", "Paused", resolve_tick(run, None, now))
+    db.commit()
+    return run
+
+
+def resume_run(db: Session, run: Run, user: User) -> Run:
+    refresh_status(db, run)
+    if run.status != RunStatus.paused.value:
+        raise PlaybackError("Only a paused run can be resumed")
+    now = utcnow()
+    tick = resolve_tick(run, None, now)
+    run.paused_seconds = (run.paused_seconds or 0.0) + max((now - run.paused_at).total_seconds(), 0.0)
+    run.paused_at = None
+    run.status = RunStatus.active.value
+    _log(db, user, run, "run_resumed", "Resumed", tick)
+    db.commit()
+    return run
+
+
+def reset_run(db: Session, run: Run, user: User) -> Run:
+    """Rewind to T+00:00 and pause. Stored measurements, analysis and incident rows are kept (the run is
+    deterministic, so a replay shows the same values); analyst incident statuses are cleared because the
+    incidents have not happened yet in the replay."""
+    from app.models import Incident
+
+    now = utcnow()
+    run.paused_seconds = max((now - run.started_at).total_seconds(), 0.0)
+    run.paused_at = now
+    run.status = RunStatus.paused.value
+    run.ended_at = None
+    for inc in db.query(Incident).filter(Incident.run_id == run.id).all():
+        inc.status, inc.status_note, inc.resolved_by, inc.resolved_at = "investigating", None, None, None
+    _log(db, user, run, "run_reset", "Reset", 0)
+    db.commit()
+    return run
 
 
 def resolve_tick(run: Run, at: int | None, now: datetime | None = None) -> int:
@@ -148,7 +226,7 @@ def run_out(run: Run, user: User, now: datetime | None = None) -> dict:
         "id": run.id, "name": run.name, "description": run.description, "status": status,
         "created_by": run.created_by, "creator_username": run.creator.username if run.creator else None,
         "created_at": run.created_at, "started_at": run.started_at, "ended_at": run.ended_at,
-        "tick_seconds": run.tick_seconds, "duration_ticks": run.duration_ticks,
+        "tick_seconds": run.tick_seconds, "duration_ticks": run.duration_ticks, "paused_at": run.paused_at,
         "playback_speed": run.playback_speed, "revealed_ticks": revealed,
         "progress": round(revealed / run.duration_ticks, 4),
         "scored": run.model_version_id is not None,

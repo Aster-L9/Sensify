@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/Toast';
-import { User, Mail, Lock, ArrowRight, UserPlus } from 'lucide-react';
+import { AuthLayout } from '@/components/AuthLayout';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -13,136 +13,71 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
   const { register } = useAuth();
-  const { error, success } = useToast();
+  const { success } = useToast();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFailure(null);
     if (password !== confirmPassword) {
-      error('Registration Failed', 'Passwords do not match');
+      setFailure('The two passwords do not match.');
       return;
     }
     setLoading(true);
     try {
       await register(username, email, password);
-      success('Account created', 'Welcome to Sensify Pipeline Intelligence');
+      success('Account created', 'You are signed in as an analyst.');
       router.push('/dashboard');
     } catch (err: any) {
-      error('Registration Failed', err.message || 'Could not create account');
+      setFailure(err.message || 'Could not create the account');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-white ">
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-[128px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[128px] pointer-events-none" />
+    <AuthLayout>
+      <h1 className="text-[28px] leading-tight text-gray-900">Create an analyst account</h1>
+      <p className="mt-1 text-sm text-gray-500">Analysts investigate runs and incidents. Administrators are added by an administrator.</p>
 
-      <div className="w-full max-w-md relative z-10">
-        <div className="text-center mb-8">
-          <img src="/sensify-logo.png" alt="Sensify" className="w-16 h-16 mx-auto mb-4 rounded-2xl" />
-          <h1 className="text-2xl font-bold text-gray-900 tracking-wide">
-            Create Account
-          </h1>
-          <p className="text-xs text-gray-500 mt-1 font-mono">
-            Create an analyst account for the Sensify dashboard
-          </p>
+      <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+        <div>
+          <label htmlFor="username" className="input-label">Name</label>
+          <input id="username" required value={username} onChange={(e) => setUsername(e.target.value)} maxLength={50}
+            autoComplete="name" className="input-field" />
         </div>
-
-        <div className="glass-card p-8 shadow-2xl border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-brand-400" /> Analyst Registration
-          </h2>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="input-label">Full Name / Username</label>
-              <div className="relative">
-                <User className="w-4 h-4 text-gray-500 absolute left-3.5 top-3.5" />
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="John Doe"
-                  className="input-field pl-10"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="input-label">Email Address</label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-gray-500 absolute left-3.5 top-3.5" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="analyst@sensify.local"
-                  className="input-field pl-10"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="input-label">Password</label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-gray-500 absolute left-3.5 top-3.5" />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                  className="input-field pl-10"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="input-label">Confirm Password</label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-gray-500 absolute left-3.5 top-3.5" />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter password"
-                  className="input-field pl-10"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full py-3 flex items-center justify-center gap-2 mt-6 text-sm font-semibold"
-            >
-              {loading ? (
-                <span>Registering...</span>
-              ) : (
-                <>
-                  <span>Create Account</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-
-          <p className="text-xs text-center text-gray-500 mt-6">
-            Already have an account?{' '}
-            <Link href="/login" className="text-brand-400 hover:underline font-semibold">
-              Sign In
-            </Link>
-          </p>
+        <div>
+          <label htmlFor="email" className="input-label">Email</label>
+          <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} maxLength={100}
+            autoComplete="email" placeholder="studentID@psu.edu.sa" className="input-field" />
         </div>
-      </div>
-    </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="password" className="input-label">Password</label>
+            <input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password" className="input-field" />
+          </div>
+          <div>
+            <label htmlFor="confirm" className="input-label">Repeat password</label>
+            <input id="confirm" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password" className="input-field" />
+          </div>
+        </div>
+        <p className="text-xs text-gray-500">At least 6 characters.</p>
+
+        {failure && <p className="text-sm text-red-700 animate-fade-in" role="alert">{failure}</p>}
+
+        <button type="submit" disabled={loading} className="btn-primary w-full py-3">
+          {loading ? 'Creating account' : 'Create account'}
+        </button>
+      </form>
+
+      <p className="text-sm text-gray-500 mt-6">
+        Already have an account?{' '}
+        <Link href="/" className="font-medium text-brand-600 hover:underline">Sign in</Link>
+      </p>
+    </AuthLayout>
   );
 }

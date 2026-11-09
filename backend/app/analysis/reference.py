@@ -1,5 +1,5 @@
 """
-Reference profile learned from normal runs.
+Reference profile learned from normal runs (spec §5.3).
 
 For each adjacent segment pair: the normal flow difference, and a fitted relation
 between the pressure drop and the flow (plus valve opening or pump speed where the

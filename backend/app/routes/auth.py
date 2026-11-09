@@ -7,6 +7,7 @@ from app.models import User, ActivityLog, UserRole
 from app.schemas import (
     UserCreate, UserLogin, TokenResponse, UserResponse, RefreshRequest, PasswordChange,
 )
+from app.services.accounts import AccountError, check_password, create_account
 from app.auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token, decode_token,
@@ -18,31 +19,11 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/register", response_model=TokenResponse)
 def register(data: UserCreate, db: Session = Depends(get_db)):
-    username = data.username.strip()
-    email = data.email.strip().lower()
-
-    if not username:
-        raise HTTPException(status_code=400, detail="Username is required")
-    if "@" not in email:
-        raise HTTPException(status_code=400, detail="Enter a valid email address")
-    if len(data.password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
-    if db.query(User).filter(User.email == email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
-    if db.query(User).filter(User.username == username).first():
-        raise HTTPException(status_code=400, detail="Username already taken")
-
-    # Self-registration always creates an analyst; the admin account is pre-seeded only
-    user = User(
-        username=username,
-        email=email,
-        hashed_password=hash_password(data.password),
-        role=UserRole.analyst.value,
-        is_active=True,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    # Self-registration always creates an analyst; administrators are added by an administrator
+    try:
+        user = create_account(db, data.username, data.email, data.password, UserRole.analyst.value)
+    except AccountError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
     # Log activity
     db.add(ActivityLog(
@@ -69,6 +50,10 @@ def change_password(
 ):
     if not verify_password(data.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect current password")
+    try:
+        check_password(data.new_password)
+    except AccountError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
     current_user.hashed_password = hash_password(data.new_password)
     db.commit()

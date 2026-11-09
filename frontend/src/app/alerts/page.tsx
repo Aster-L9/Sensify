@@ -3,7 +3,7 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowUpRight, BellRing, FilterX, MapPin } from 'lucide-react';
+import { AlertCircle, ArrowUpRight, FileSearch, FilterX, MapPin } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAlerts, getRuns, getTopology } from '@/lib/api';
 import type { AlertItem, AlertKind, RunOut, Segment, Severity, TrustStatus } from '@/lib/types';
@@ -17,6 +17,13 @@ const KINDS: { id: AlertKind; label: string }[] = [
   { id: 'anomaly', label: 'Anomaly' },
   { id: 'low_trust', label: 'Low trust' },
 ];
+
+/** Run time typed as "m", "m:ss" or "T+mm:ss", in seconds; null when it is not a time. */
+function parseRunTime(text: string): number | null {
+  const t = text.trim().replace(/^T\+/i, '');
+  const m = /^(\d{1,3})(?::([0-5]\d))?$/.exec(t);
+  return m ? Number(m[1]) * 60 + Number(m[2] ?? 0) : null;
+}
 
 function trustStatus(score: number): TrustStatus {
   return score >= 0.7 ? 'Supported' : score >= 0.4 ? 'Review' : 'Contradicted';
@@ -39,6 +46,21 @@ function AlertsView() {
   const segFilter = search.get('seg');
   const severityFilter = search.get('severity') as Severity | null;
   const kindFilter = search.get('kind') as AlertKind | null;
+  // Time range: run time from each run's start (T+00:00), both ends inclusive; a window that overlaps it matches.
+  const fromText = search.get('from') ?? '';
+  const toText = search.get('to') ?? '';
+  const [fromDraft, setFromDraft] = useState(fromText);
+  const [toDraft, setToDraft] = useState(toText);
+  useEffect(() => { setFromDraft(fromText); setToDraft(toText); }, [fromText, toText]);
+  const fromSec = fromText ? parseRunTime(fromText) : null;
+  const toSec = toText ? parseRunTime(toText) : null;
+  const timeProblem = (fromText && fromSec === null) || (toText && toSec === null)
+    ? 'Type run time as minutes, or minutes and seconds such as 4:30.'
+    : fromSec !== null && toSec !== null && fromSec > toSec
+      ? 'The start of the time range is after its end.'
+      : null;
+  const fromTick = fromSec !== null ? Math.floor(fromSec / 5) : undefined;
+  const toTick = toSec !== null ? Math.floor(toSec / 5) : undefined;
 
   const [alerts, setAlerts] = useState<AlertItem[] | null>(null);
   const [runs, setRuns] = useState<RunOut[]>([]);
@@ -54,11 +76,17 @@ function AlertsView() {
   }, [search, router, pathname]);
 
   const segmentId = segFilter ? segments.find((s) => s.code === segFilter)?.id : undefined;
+  // A segment in the URL that does not exist is an error to explain, never a silent "all segments".
+  const unknownSegment = !!segFilter && segments.length > 0 && segmentId === undefined;
 
   const fetchAlerts = useCallback(async () => {
+    if (timeProblem || unknownSegment) return;
     try {
       const [items, runList] = await Promise.all([
-        getAlerts({ runId: runFilter ? Number(runFilter) : undefined, segmentId, kind: kindFilter ?? undefined, limit: 500 }),
+        getAlerts({
+          runId: runFilter ? Number(runFilter) : undefined, segmentId, kind: kindFilter ?? undefined,
+          fromTick, toTick, limit: 500,
+        }),
         getRuns(),
       ]);
       setAlerts(items);
@@ -67,7 +95,7 @@ function AlertsView() {
     } catch (e: any) {
       setErr(e.message || 'Could not load alerts');
     }
-  }, [runFilter, segmentId, kindFilter]);
+  }, [runFilter, segmentId, kindFilter, fromTick, toTick, timeProblem, unknownSegment]);
 
   useEffect(() => {
     getTopology().then((t) => setSegments(t.segments)).catch(() => undefined);
@@ -103,19 +131,17 @@ function AlertsView() {
     });
     return out;
   }, [shown]);
-  const filtered = Boolean(runFilter || segFilter || severityFilter || kindFilter);
+  const filtered = Boolean(runFilter || segFilter || severityFilter || kindFilter || fromText || toText);
   const ongoing = (alerts ?? []).filter((a) => a.ongoing).length;
 
-  if (alerts === null && !err) return <LoadingState message="Loading alerts..." />;
+  if (alerts === null && !err && !timeProblem && !unknownSegment) return <LoadingState message="Loading alerts" />;
   if (err && alerts === null) return <ErrorState message={err} onRetry={fetchAlerts} />;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BellRing className="w-6 h-6 text-brand-500" aria-hidden /> Alerts
-          </h1>
+          <h1 className="text-[28px] leading-tight text-gray-900">Alerts</h1>
           <p className="text-sm text-gray-500 mt-1 max-w-2xl">
             Every stretch of time in which Sensify flagged a segment, either because its readings looked anomalous
             or because they could not be trusted. Playing runs add windows as they unfold.
@@ -133,20 +159,20 @@ function AlertsView() {
       </div>
 
       <div className="glass-card p-4 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           <label className="text-sm">
-            <span className="block text-xs font-semibold text-gray-600 mb-1">Run</span>
+            <span className="block text-xs font-medium text-gray-500 mb-1">Run</span>
             <select value={runFilter ?? ''} onChange={(e) => setFilter('run', e.target.value || null)} className="input-field py-2 text-sm">
               <option value="">All runs</option>
               {runs.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.name}{r.status === 'active' ? ' (playing)' : ''}
+                  {r.name}{r.status === 'active' ? ' (playing)' : r.status === 'paused' ? ' (paused)' : ''}
                 </option>
               ))}
             </select>
           </label>
           <label className="text-sm">
-            <span className="block text-xs font-semibold text-gray-600 mb-1">Segment</span>
+            <span className="block text-xs font-medium text-gray-500 mb-1">Segment</span>
             <select value={segFilter ?? ''} onChange={(e) => setFilter('seg', e.target.value || null)} className="input-field py-2 text-sm">
               <option value="">All segments</option>
               {segments.map((s) => (
@@ -154,8 +180,30 @@ function AlertsView() {
               ))}
             </select>
           </label>
+          <fieldset className="text-sm">
+            <legend className="block text-xs font-medium text-gray-500 mb-1">Run time</legend>
+            <form
+              className="flex items-center gap-1.5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const next = new URLSearchParams(search.toString());
+                if (fromDraft.trim()) next.set('from', fromDraft.trim()); else next.delete('from');
+                if (toDraft.trim()) next.set('to', toDraft.trim()); else next.delete('to');
+                const query = next.toString();
+                router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+              }}
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) e.currentTarget.requestSubmit(); }}
+            >
+              <input value={fromDraft} onChange={(e) => setFromDraft(e.target.value)} placeholder="from 0:00"
+                aria-label="From run time, minutes and seconds" className="input-field py-2 text-sm tabular" aria-invalid={!!timeProblem} />
+              <span className="text-gray-400" aria-hidden>to</span>
+              <input value={toDraft} onChange={(e) => setToDraft(e.target.value)} placeholder="the end"
+                aria-label="To run time, minutes and seconds" className="input-field py-2 text-sm tabular" aria-invalid={!!timeProblem} />
+              <button type="submit" className="sr-only">Apply time range</button>
+            </form>
+          </fieldset>
           <div className="text-sm">
-            <span className="block text-xs font-semibold text-gray-600 mb-1" id="kind-label">Reason</span>
+            <span className="block text-xs font-medium text-gray-500 mb-1" id="kind-label">Reason</span>
             <div className="flex items-center gap-1.5" role="group" aria-labelledby="kind-label">
               <FilterButton active={!kindFilter} onClick={() => setFilter('kind', null)}>Either</FilterButton>
               {KINDS.map((k) => (
@@ -186,11 +234,29 @@ function AlertsView() {
         </div>
       </div>
 
-      {shown.length === 0 ? (
+      {(timeProblem || unknownSegment) ? (
+        <div className="glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 animate-fade-in" role="alert">
+          <p className="flex items-start gap-2 text-sm text-gray-800">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-700" aria-hidden />
+            {unknownSegment ? `Segment ${segFilter} does not exist, so no alerts can be shown for it.` : timeProblem}
+          </p>
+          <button className="btn-secondary py-2 w-fit" onClick={() => {
+            const next = new URLSearchParams(search.toString());
+            if (unknownSegment) next.delete('seg'); else { next.delete('from'); next.delete('to'); }
+            const query = next.toString();
+            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+          }}>
+            {unknownSegment ? 'Show all segments' : 'Clear the time range'}
+          </button>
+        </div>
+      ) : shown.length === 0 ? (
         <EmptyState
           title={filtered ? 'No windows match these filters' : 'No flagged windows yet'}
+          icon={filtered ? 'search' : 'empty'}
           message={filtered
-            ? 'Try another run, segment or severity.'
+            ? (fromText || toText)
+              ? `No window overlaps ${fromText ? `T+${fromText}` : 'the start'} to ${toText ? `T+${toText}` : 'the end'} with these filters. Widen the time range or clear the filters.`
+              : 'Try another run, segment or severity.'
             : 'When Sensify flags a segment during a run, the window appears here for everyone to review.'}
         />
       ) : (
@@ -270,7 +336,9 @@ function RunGroup({ runId, runName, items, run, showScenario }: {
               {items.length} {items.length === 1 ? 'window' : 'windows'} across {segmentsHit} {segmentsHit === 1 ? 'segment' : 'segments'}
             </span>
             <span className="text-xs text-gray-500">
-              {run?.status === 'active' ? `Playing, ${Math.round(run.progress * 100)} % revealed` : `Started ${formatDateTime(run?.started_at)}`}
+              {run?.status === 'active' ? `Playing, ${Math.round(run.progress * 100)} % revealed`
+                : run?.status === 'paused' ? `Paused, ${Math.round(run.progress * 100)} % revealed`
+                : `Started ${formatDateTime(run?.started_at)}`}
             </span>
           </div>
         </th>
@@ -334,14 +402,20 @@ function AlertRow({ alert: a, run }: { alert: AlertItem; run?: RunOut }) {
         <p className="text-sm text-gray-700 leading-snug mt-1">{a.summary}</p>
       </td>
       <td>
-        <div className="flex flex-col gap-1">
-          <Link href={`/runs/${a.run_id}?t=${a.start_tick}&seg=${a.segment_code}`}
-            className="btn-ghost py-1 px-3 text-sm flex items-center gap-1 w-fit whitespace-nowrap">
-            Run view <ArrowUpRight className="w-3.5 h-3.5" aria-hidden />
+        <div className="flex items-center gap-0.5">
+          <Link href={`/runs/${a.run_id}?t=${a.start_tick}&seg=${a.segment_code}`} title="Open in the run view"
+            className="btn-ghost p-2" aria-label={`Open ${a.segment_code} at ${formatTick(a.start_tick, tickSeconds)} in the run view`}>
+            <ArrowUpRight className="w-4 h-4" aria-hidden />
           </Link>
-          <Link href={`/map?run=${a.run_id}&t=${a.start_tick}&seg=${a.segment_code}`}
-            className="btn-ghost py-1 px-3 text-sm flex items-center gap-1 w-fit whitespace-nowrap">
-            <MapPin className="w-3.5 h-3.5" aria-hidden /> Map
+          {a.incident_key && (
+            <Link href={`/incidents/${encodeURIComponent(a.incident_key)}`} title="Open the incident"
+              className="btn-ghost p-2" aria-label="Open the incident">
+              <FileSearch className="w-4 h-4" aria-hidden />
+            </Link>
+          )}
+          <Link href={`/map?run=${a.run_id}&t=${a.start_tick}&seg=${a.segment_code}`} title="Show on the map"
+            className="btn-ghost p-2" aria-label="Show on the map">
+            <MapPin className="w-4 h-4" aria-hidden />
           </Link>
         </div>
       </td>

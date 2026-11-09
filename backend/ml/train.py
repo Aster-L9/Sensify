@@ -1,6 +1,9 @@
 """
-Training pipeline: dataset -> features -> per-segment Isolation Forests ->
-calibration -> evaluation on the held-out test split -> versioned artifact.
+Training pipeline (spec §6.1): dataset -> features -> per-segment Isolation Forests ->
+calibration -> validation outcomes -> evaluation on the held-out test split -> versioned artifact.
+
+Validation outcomes (handover DH-09) are the same measures on the validation split, kept
+apart from the test metrics. They are development figures: validation informed the settings.
 
     python -m ml.train [--generate] [--trees 150] [--samples 256] [--alpha 0.005] [--version N]
 
@@ -70,6 +73,39 @@ def _dataset_summary(runs, dataset_dir: Path) -> dict:
     return summary
 
 
+def evaluate_runs(model: DetectorModel, runs) -> dict:
+    """ML, threshold-baseline and trust measures over a set of labelled runs."""
+    flags, scores, baseline, trust = {}, {}, {}, {}
+    for run in runs:
+        out = analyze_run(run.reported, model)
+        flags[run.run_id], scores[run.run_id] = out.ml_flag, out.scores
+        baseline[run.run_id], trust[run.run_id] = out.baseline.any, out.trust.status
+    return {
+        "ml": detection_metrics(flags, runs, scores),
+        "baseline": detection_metrics(baseline, runs),
+        "trust": trust_metrics(trust, runs),
+    }
+
+
+VALIDATION_NOTE = ("Validation runs informed this model's settings: its normal runs are part of the calibration "
+                   "set and alpha was chosen on this split. Read these as development figures; the test split "
+                   "gives the unbiased estimate.")
+
+
+def validation_section(model: DetectorModel, runs, dataset_dir: Path, computed: str) -> dict:
+    """Outcomes on the validation split with their provenance (split, run counts, how they were produced)."""
+    by_type: dict[str, int] = {}
+    for r in runs:
+        by_type[r.scenario_type] = by_type.get(r.scenario_type, 0) + 1
+    return {
+        "split": "validation", "dataset": _display_path(dataset_dir), "runs": len(runs),
+        "normal_runs": by_type.get("normal", 0), "scenario_runs": len(runs) - by_type.get("normal", 0),
+        "by_type": dict(sorted(by_type.items())), "model_version": model.version, "computed": computed,
+        "computed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "note": VALIDATION_NOTE,
+        "metrics": evaluate_runs(model, runs),
+    }
+
+
 def train_model(params: TrainParams, dataset_dir: Path, store_dir: Path, version: int,
                 generate_if_missing: bool = True, progress: Callable[[str], None] | None = None) -> TrainResult:
     started = time.perf_counter()
@@ -97,17 +133,12 @@ def train_model(params: TrainParams, dataset_dir: Path, store_dir: Path, version
                               alpha=params.alpha, random_state=params.random_state)
     model.version = version
 
+    validation_runs = split(runs, "validation")
+    say(f"Measuring outcomes on {len(validation_runs)} validation runs")
+    validation = validation_section(model, validation_runs, dataset_dir, computed="at training")
+
     say(f"Evaluating on {len(test)} held-out test runs")
-    flags, scores, baseline, trust = {}, {}, {}, {}
-    for run in test:
-        out = analyze_run(run.reported, model)
-        flags[run.run_id], scores[run.run_id] = out.ml_flag, out.scores
-        baseline[run.run_id], trust[run.run_id] = out.baseline.any, out.trust.status
-    metrics = {
-        "ml": detection_metrics(flags, test, scores),
-        "baseline": detection_metrics(baseline, test),
-        "trust": trust_metrics(trust, test),
-    }
+    metrics = evaluate_runs(model, test)
     targets = load_targets()
     check = compare_targets(metrics, targets)
     trained_seconds = round(time.perf_counter() - started, 2)
@@ -118,7 +149,8 @@ def train_model(params: TrainParams, dataset_dir: Path, store_dir: Path, version
     model.save(version_dir / "model.joblib")
     created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     document = {"version": version, "algorithm": ALGORITHM, "feature_spec": FEATURE_SPEC_VERSION,
-                "params": asdict(params), "dataset": summary, "metrics": metrics, "targets": targets,
+                "params": asdict(params), "dataset": summary, "metrics": metrics, "validation": validation,
+                "targets": targets,
                 "targets_check": check, "trained_seconds": trained_seconds, "created_at": created_at}
     (version_dir / "metrics.json").write_text(json.dumps(document, indent=2), encoding="utf-8")
     passed = sum(c["passed"] for c in check.values())
@@ -179,6 +211,26 @@ def render_report(doc: dict) -> str:
         value = c["value"]
         shown = "n/a" if value is None else (f"{value:.4g}" if isinstance(value, float) else str(value))
         lines.append(f"| {label} | {shown} | {c['op']} {c['target']} | {'yes' if c['passed'] else '**no**'} |")
+    val = doc.get("validation")
+    if val:
+        vml = val["metrics"]["ml"]
+        lines += [
+            "",
+            f"## Validation outcomes ({val['runs']} validation runs; not the test split)",
+            "",
+            val["note"],
+            "",
+            "| Measure | ML | Threshold baseline |",
+            "|---|---|---|",
+            f"| Overall detection rate | {_pct(vml['overall']['rate'])} | {_pct(val['metrics']['baseline']['overall']['rate'])} |",
+            f"| Tick false-alarm rate (normal runs) | {_pct(vml['false_alarm']['tick_rate'])} | "
+            f"{_pct(val['metrics']['baseline']['false_alarm']['tick_rate'])} |",
+            f"| False alert windows per normal run | {_num(vml['false_alarm']['windows_per_run'])} | "
+            f"{_num(val['metrics']['baseline']['false_alarm']['windows_per_run'])} |",
+            f"| Window precision | {_pct(vml['window_precision'])} | {_pct(val['metrics']['baseline']['window_precision'])} |",
+            f"| Median time to detect | {_num(vml['time_to_detect_s']['median'], ' s', 0)} | "
+            f"{_num(val['metrics']['baseline']['time_to_detect_s']['median'], ' s', 0)} |",
+        ]
     lines += [
         "",
         "## Detection by scenario type (ML vs threshold baseline)",

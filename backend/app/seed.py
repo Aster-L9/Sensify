@@ -1,6 +1,6 @@
 """
 Seed data: the pipeline segments (from the topology config), the default
-accounts, and a set of demo runs.
+accounts, and (from Task 6 on) a set of demo runs.
 """
 import os
 from datetime import datetime, timedelta

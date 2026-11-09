@@ -46,9 +46,9 @@ export default function ModelsPage() {
   const { isAdmin } = useAuth();
   if (!isAdmin) {
     return (
-      <div className="glass-card p-12 text-center border-red-500/30">
-        <Shield className="w-12 h-12 text-red-400 mx-auto mb-3" aria-hidden />
-        <h2 className="text-xl font-bold text-gray-900">Access Restricted</h2>
+      <div className="glass-card p-12 text-center">
+        <Shield className="w-10 h-10 text-gray-400 mx-auto mb-3" aria-hidden />
+        <h1 className="text-xl font-semibold text-gray-900">Administrators only</h1>
         <p className="text-sm text-gray-500 mt-1">Only administrators can train and activate models.</p>
       </div>
     );
@@ -116,9 +116,7 @@ function Models() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <BrainCircuit className="w-6 h-6 text-brand-500" aria-hidden /> Models
-        </h1>
+        <h1 className="text-[28px] leading-tight text-gray-900">Models</h1>
         <p className="text-sm text-gray-500 mt-1 max-w-3xl">
           Each version learns normal behaviour from normal runs only, then is graded once on held-out test runs it
           never saw. New runs are scored with the active version; earlier runs keep the version that scored them.
@@ -169,7 +167,12 @@ function Models() {
                         </span>
                       )}
                     </td>
-                    <td><StatusPill status={m.status} /></td>
+                    <td>
+                      <StatusPill status={m.status} />
+                      {m.artifact_available === false && (
+                        <p className="mt-1 text-xs text-red-700" title="The model file is missing from the model store">Model file missing</p>
+                      )}
+                    </td>
                     <td className="text-sm text-gray-600 whitespace-nowrap">
                       {formatDateTime(m.created_at)}
                       <p className="text-xs text-gray-400">{m.created_by ? `by ${m.created_by}` : 'Shipped with Sensify'}</p>
@@ -189,7 +192,7 @@ function Models() {
                             {m.id === shownId ? 'Showing' : 'Details'}
                           </button>
                         )}
-                        {m.status === 'ready' && !m.is_active && (
+                        {m.status === 'ready' && !m.is_active && m.artifact_available !== false && (
                           <button type="button" onClick={() => activate(m.id)} disabled={activating !== null}
                             className="btn-secondary py-1 px-3 text-sm whitespace-nowrap flex items-center gap-1.5 disabled:opacity-50">
                             {activating === m.id && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />} Set active
@@ -452,6 +455,8 @@ function VersionDetail({ model }: { model: ModelDetail }) {
         <p className="text-xs text-gray-500">Held-out test split, used once for grading and never for tuning</p>
       </div>
 
+      <SplitOutcomes model={model} />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-gray-900">Detection by scenario type</h3>
@@ -536,6 +541,78 @@ function VersionDetail({ model }: { model: ModelDetail }) {
         </div>
       </div>
     </section>
+  );
+}
+
+/** Validation outcomes beside the test results, each with its split and run counts (handover DH-09). */
+function SplitOutcomes({ model }: { model: ModelDetail }) {
+  const test = model.metrics.ml;
+  const testRuns = model.dataset.splits?.test;
+  const testCount = testRuns ? Object.values(testRuns).reduce((a, b) => a + b, 0) : null;
+  const testScenario = testRuns ? testCount! - (testRuns.normal ?? 0) : null;
+  const val = model.validation;
+  const vml = val?.metrics.ml;
+  const vtrust = val?.metrics.trust;
+
+  const measures: { label: string; val: string; test: string }[] = vml && test ? [
+    { label: 'Scenario runs detected', val: `${vml.overall.detected} of ${vml.overall.total} (${pct(vml.overall.rate)})`,
+      test: `${test.overall.detected} of ${test.overall.total} (${pct(test.overall.rate)})` },
+    { label: 'Median time to detect', val: seconds(vml.time_to_detect_s.median), test: seconds(test.time_to_detect_s.median) },
+    { label: 'Tick false-alarm rate on normal runs', val: pct(vml.false_alarm.tick_rate, 2), test: pct(test.false_alarm.tick_rate, 2) },
+    { label: 'False alert windows per normal run', val: perRun(vml.false_alarm.windows_per_run), test: perRun(test.false_alarm.windows_per_run) },
+    { label: 'Window precision', val: pct(vml.window_precision), test: pct(test.window_precision) },
+    { label: 'Compromised reporting caught', val: pct(vtrust?.compromise_detection_rate), test: pct(model.metrics.trust?.compromise_detection_rate) },
+  ] : [];
+
+  return (
+    <div className="glass-card overflow-hidden" aria-labelledby="split-heading">
+      <div className="px-5 pt-5 pb-3">
+        <h3 id="split-heading" className="text-sm font-semibold text-gray-900">Validation and test outcomes</h3>
+        <p className="text-xs text-gray-500 mt-0.5 max-w-3xl">
+          The same measures on two separate splits. Validation runs helped choose this model&apos;s settings, so read them as
+          development figures; the test split was used once, for grading.
+        </p>
+      </div>
+      {val && vml ? (
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Measure</th>
+                <th className="!text-right">
+                  Validation
+                  <span className="block font-normal text-gray-400">{val.runs} runs: {val.scenario_runs} scenario, {val.normal_runs} normal</span>
+                </th>
+                <th className="!text-right">
+                  Test
+                  <span className="block font-normal text-gray-400">
+                    {testCount !== null ? `${testCount} runs: ${testScenario} scenario, ${testRuns?.normal ?? 0} normal` : 'held-out split'}
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {measures.map((m) => (
+                <tr key={m.label}>
+                  <td className="text-sm">{m.label}</td>
+                  <td className="text-right tabular text-sm">{m.val}</td>
+                  <td className="text-right tabular text-sm">{m.test}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="px-5 py-3 text-xs text-gray-500 border-t border-rule">
+            Validation outcomes for v{val.model_version} were computed {val.computed} ({formatDateTime(val.computed_at)}) from {val.dataset}.
+            {val.computed === 'after training' && ' The model file was not changed; its test results above are the originals.'}
+          </p>
+        </div>
+      ) : (
+        <p className="px-5 pb-5 text-sm text-gray-600">
+          Version v{model.version} did not record validation outcomes when it was trained, so only its test results are shown.
+          Run <code className="text-xs bg-gray-100 rounded px-1 py-0.5">python -m ml.validation_metrics --version {model.version}</code> to add them.
+        </p>
+      )}
+    </div>
   );
 }
 

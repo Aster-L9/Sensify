@@ -1,5 +1,6 @@
 import type {
-  AlertItem, AnomalySeries, BaselineAlarms, ConsistencySeries, DashboardSummary, GroundTruth, ModelDetail,
+  AlertItem, AnomalySeries, BaselineAlarms, ConsistencySeries, DashboardSummary, DemoState, EvaluationDetail,
+  EvaluationRunOut, GroundTruth, IncidentDetail, IncidentFilters, IncidentSummary, ModelDetail,
   ModelVersion, RunEvent, RunOut, RunState, ScenarioCatalog, ScenarioLaunch, TelemetryPoint, Topology, TrustSeries,
 } from './types';
 
@@ -88,7 +89,7 @@ class ApiClient {
       let errorMsg = 'Request failed';
       try {
         const errorBody = await response.json();
-        errorMsg = errorBody.detail || errorBody.message || errorMsg;
+        errorMsg = describeDetail(errorBody.detail) || errorBody.message || errorMsg;
       } catch {
         errorMsg = await response.text();
       }
@@ -113,6 +114,19 @@ class ApiClient {
     } catch {}
     return false;
   }
+}
+
+/** FastAPI validation errors (422) carry a list of problems; show them as one readable sentence. */
+function describeDetail(detail: unknown): string | null {
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    const parts = detail.map((d: any) => {
+      const field = Array.isArray(d?.loc) ? d.loc[d.loc.length - 1] : null;
+      return field && typeof field === 'string' ? `${field.replace(/_/g, ' ')}: ${d.msg}` : d?.msg;
+    }).filter(Boolean);
+    return parts.length ? parts.join('; ') : null;
+  }
+  return null;
 }
 
 export class ApiError extends Error {
@@ -198,6 +212,19 @@ export async function createRun(data: { name?: string; description?: string; see
   });
 }
 
+/** Shared playback control (administrators): every viewer sees the paused or rewound moment. */
+export async function pauseRun(id: number): Promise<RunOut> {
+  return api.fetch(`/runs/${id}/pause`, { method: 'POST' });
+}
+
+export async function resumeRun(id: number): Promise<RunOut> {
+  return api.fetch(`/runs/${id}/resume`, { method: 'POST' });
+}
+
+export async function resetRun(id: number): Promise<RunOut> {
+  return api.fetch(`/runs/${id}/reset`, { method: 'POST' });
+}
+
 export async function getTelemetry(
   runId: number,
   opts: { segmentId?: number; fromTick?: number; toTick?: number; limit?: number } = {},
@@ -210,7 +237,7 @@ export async function getTelemetry(
   return api.fetch(`/telemetry?${params}`);
 }
 
-// ── Scenarios, analysis, alerts, models ─────────────────────────────────────
+// ── Sprint 2: scenarios, analysis, alerts, models ────────────────────────────
 export async function getScenarios(): Promise<ScenarioCatalog> {
   return api.fetch('/scenarios');
 }
@@ -256,9 +283,13 @@ export async function getAlerts(filters: {
   segmentId?: number;
   severity?: string;
   kind?: string;
+  fromTick?: number;
+  toTick?: number;
   limit?: number;
 } = {}): Promise<AlertItem[]> {
   const params = new URLSearchParams();
+  if (filters.fromTick !== undefined) params.set('from_tick', String(filters.fromTick));
+  if (filters.toTick !== undefined) params.set('to_tick', String(filters.toTick));
   if (filters.runId !== undefined) params.set('run_id', String(filters.runId));
   if (filters.segmentId !== undefined) params.set('segment_id', String(filters.segmentId));
   if (filters.severity) params.set('severity', filters.severity);
@@ -291,8 +322,8 @@ export async function getUsers() {
   return api.fetch('/users');
 }
 
-export async function createUser(data: { username: string; email: string; password: string; role: string }) {
-  return api.fetch('/users', {
+export async function createUser(data: { username: string; email: string; password: string; role: 'analyst' | 'admin' }) {
+  return api.fetch('/users/', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -309,4 +340,90 @@ export async function deleteUser(id: number) {
   return api.fetch(`/users/${id}`, {
     method: 'DELETE',
   });
+}
+
+// ── Sprint 3: incidents, evaluation, demo, reports ───────────────────────────
+export async function getIncidents(filters: IncidentFilters = {}): Promise<IncidentSummary[]> {
+  const params = new URLSearchParams();
+  if (filters.runId !== undefined) params.set('run_id', String(filters.runId));
+  if (filters.classification) params.set('classification', filters.classification);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.severity) params.set('severity', filters.severity);
+  if (filters.segment) params.set('segment', filters.segment);
+  if (filters.sort) params.set('sort', filters.sort);
+  if (filters.order) params.set('order', filters.order);
+  params.set('limit', String(filters.limit ?? 200));
+  return api.fetch(`/incidents?${params}`);
+}
+
+export async function getRunIncidents(runId: number): Promise<IncidentSummary[]> {
+  return api.fetch(`/runs/${runId}/incidents`);
+}
+
+export async function getIncident(key: string): Promise<IncidentDetail> {
+  return api.fetch(`/incidents/${encodeURIComponent(key)}`);
+}
+
+export async function setIncidentStatus(
+  key: string, status: 'investigating' | 'resolved', note?: string,
+): Promise<IncidentDetail> {
+  return api.fetch(`/incidents/${encodeURIComponent(key)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, note: note ?? null }),
+  });
+}
+
+export async function getEvaluations(): Promise<EvaluationRunOut[]> {
+  return api.fetch('/evaluation');
+}
+
+export async function getLatestEvaluation(): Promise<EvaluationDetail> {
+  return api.fetch('/evaluation/latest');
+}
+
+export async function getEvaluation(id: number): Promise<EvaluationDetail> {
+  return api.fetch(`/evaluation/${id}`);
+}
+
+export async function runEvaluation(): Promise<EvaluationRunOut> {
+  return api.fetch('/evaluation', { method: 'POST' });
+}
+
+export async function startDemo(): Promise<DemoState> {
+  return api.fetch('/demo', { method: 'POST' });
+}
+
+export async function getDemo(): Promise<DemoState> {
+  return api.fetch('/demo');
+}
+
+export function reportUrl(kind: 'incident' | 'evaluation', id: string | number, format: 'pdf' | 'csv'): string {
+  return `${API_URL}/reports/${kind}/${encodeURIComponent(String(id))}?format=${format}`;
+}
+
+/** Fetch a report with the bearer token (a plain link can't send it) and save it as a file. */
+export async function downloadReport(
+  kind: 'incident' | 'evaluation', id: string | number, format: 'pdf' | 'csv',
+): Promise<void> {
+  const token = api.getAccessToken();
+  const response = await fetch(reportUrl(kind, id, format), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    let msg = 'Report download failed';
+    try {
+      const body = await response.json();
+      msg = body.detail || body.message || msg;
+    } catch {}
+    throw new ApiError(response.status, msg);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sensify-${kind}-${id}.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }

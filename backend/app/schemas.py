@@ -1,6 +1,9 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Literal, Optional, List
 from pydantic import BaseModel, ConfigDict, Field
+
+# The application's only roles. Anything else is a 422 and is never stored (handover DH-04).
+Role = Literal["admin", "analyst"]
 
 
 # ── Auth Schemas ───────────────────────────────────────────────────────────────
@@ -45,15 +48,20 @@ class UserResponse(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    role: Optional[str] = None
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    role: Optional[Role] = None
     is_active: Optional[bool] = None
 
 
 class UserCreateAdmin(BaseModel):
+    """Admin add-user (handover DH-01); field rules are checked by app.services.accounts."""
+    model_config = ConfigDict(extra="forbid")
+
     username: str
     email: str
     password: str
-    role: str = "analyst"
+    role: Role = "analyst"
 
 
 # ── Segment Schemas ────────────────────────────────────────────────────────────

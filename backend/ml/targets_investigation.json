@@ -1,0 +1,9 @@
+{
+  "incident_detection": {"metric": "C.incident_detection.rate", "op": ">=", "value": 0.90, "label": "Incident detection (scenario runs with an incident in the event window)"},
+  "classification_accuracy": {"metric": "C.classification_accuracy.rate", "op": ">=", "value": 0.80, "label": "Classification accuracy (decided incidents)"},
+  "decision_coverage": {"metric": "C.decision_coverage.rate", "op": ">=", "value": 0.70, "label": "Decision coverage (detected incidents that are decided)"},
+  "ambiguity_handled": {"metric": "C.ambiguity_handled.rate", "op": ">=", "value": 0.60, "label": "Ambiguous runs with an acceptable outcome (held-out only)", "datasets": ["heldout"]},
+  "segment_localisation": {"metric": "C.segment_localisation.rate", "op": ">=", "value": 0.75, "label": "Segment localisation"},
+  "ot_layer_accuracy": {"metric": "C.ot_layer_accuracy.rate", "op": ">=", "value": 0.80, "label": "OT layer accuracy"},
+  "unexplained_per_normal_run": {"metric": "C.unexplained_per_normal_run", "op": "<=", "value": 0.3, "label": "Unexplained incidents per normal run"}
+}

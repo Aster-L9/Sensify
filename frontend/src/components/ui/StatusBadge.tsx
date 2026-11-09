@@ -5,8 +5,11 @@ import {
   XCircle,
   WifiOff,
   Wrench,
-  PlayCircle,
-  HelpCircle
+  HelpCircle,
+  Pause,
+  Shield,
+  User,
+  type LucideIcon,
 } from 'lucide-react';
 
 export type StatusType =
@@ -16,6 +19,7 @@ export type StatusType =
   | 'offline'
   | 'maintenance'
   | 'active'
+  | 'paused'
   | 'completed'
   | 'admin'
   | 'analyst';
@@ -28,115 +32,47 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-export function StatusBadge({
-  status,
-  label,
-  showIcon = true,
-  size = 'md',
-  className = ''
-}: StatusBadgeProps) {
-  const normalized = String(status || 'unknown').toLowerCase();
+interface Config { tone: string; icon: LucideIcon | 'live'; defaultLabel: string }
 
-  const getConfig = () => {
-    switch (normalized) {
-      case 'operational':
-      case 'healthy':
-      case 'normal':
-        return {
-          bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-          dot: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]',
-          icon: CheckCircle2,
-          defaultLabel: 'Operational'
-        };
-      case 'warning':
-      case 'degraded':
-        return {
-          bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-          dot: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]',
-          icon: AlertTriangle,
-          defaultLabel: 'Warning'
-        };
-      case 'critical':
-      case 'failed':
-      case 'error':
-        return {
-          bg: 'bg-red-500/10 text-red-400 border-red-500/20',
-          dot: 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)] animate-pulse',
-          icon: XCircle,
-          defaultLabel: 'Critical'
-        };
-      case 'offline':
-      case 'inactive':
-        return {
-          bg: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
-          dot: 'bg-gray-400',
-          icon: WifiOff,
-          defaultLabel: 'Offline'
-        };
-      case 'maintenance':
-        return {
-          bg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-          dot: 'bg-cyan-400',
-          icon: Wrench,
-          defaultLabel: 'Maintenance'
-        };
-      case 'active':
-      case 'running':
-        return {
-          bg: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-          dot: 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)] animate-pulse',
-          icon: PlayCircle,
-          defaultLabel: 'Active'
-        };
-      case 'completed':
-        return {
-          bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-          dot: 'bg-emerald-400',
-          icon: CheckCircle2,
-          defaultLabel: 'Completed'
-        };
-      case 'admin':
-        return {
-          bg: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-          dot: 'bg-purple-400',
-          icon: CheckCircle2,
-          defaultLabel: 'Admin'
-        };
-      case 'analyst':
-        return {
-          bg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-          dot: 'bg-cyan-400',
-          icon: CheckCircle2,
-          defaultLabel: 'Analyst'
-        };
-      default:
-        return {
-          bg: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
-          dot: 'bg-gray-400',
-          icon: HelpCircle,
-          defaultLabel: status
-        };
-    }
-  };
+const CONFIG: Record<string, Config> = {
+  operational: { tone: 'bg-brand-50 text-brand-700', icon: CheckCircle2, defaultLabel: 'Operational' },
+  warning: { tone: 'bg-amber-50 text-amber-800', icon: AlertTriangle, defaultLabel: 'Warning' },
+  critical: { tone: 'bg-red-50 text-red-700', icon: XCircle, defaultLabel: 'Critical' },
+  offline: { tone: 'bg-gray-100 text-gray-600', icon: WifiOff, defaultLabel: 'Offline' },
+  maintenance: { tone: 'bg-gray-100 text-gray-700', icon: Wrench, defaultLabel: 'Maintenance' },
+  active: { tone: 'bg-brand-50 text-brand-700', icon: 'live', defaultLabel: 'Playing' },
+  paused: { tone: 'bg-gray-100 text-gray-700', icon: Pause, defaultLabel: 'Paused' },
+  completed: { tone: 'bg-gray-100 text-gray-600', icon: CheckCircle2, defaultLabel: 'Completed' },
+  admin: { tone: 'bg-brand-600 text-white', icon: Shield, defaultLabel: 'Administrator' },
+  analyst: { tone: 'bg-gray-100 text-gray-700', icon: User, defaultLabel: 'Analyst' },
+};
+const ALIASES: Record<string, string> = {
+  healthy: 'operational', normal: 'operational', degraded: 'warning', failed: 'critical', error: 'critical',
+  inactive: 'offline', running: 'active',
+};
 
-  const config = getConfig();
+export function StatusBadge({ status, label, showIcon = true, size = 'md', className = '' }: StatusBadgeProps) {
+  const key = String(status || 'unknown').toLowerCase();
+  const config = CONFIG[ALIASES[key] ?? key] ?? { tone: 'bg-gray-100 text-gray-600', icon: HelpCircle, defaultLabel: String(status) };
   const Icon = config.icon;
-  const displayText = label || config.defaultLabel;
-
+  const iconSize = size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-4 h-4' : 'w-3.5 h-3.5';
   const sizeClasses = {
-    sm: 'text-[10px] px-2 py-0.5 gap-1',
+    sm: 'text-[11px] px-2 py-0.5 gap-1',
     md: 'text-xs px-2.5 py-1 gap-1.5',
     lg: 'text-sm px-3 py-1.5 gap-2',
   }[size];
 
   return (
-    <span className={`inline-flex items-center font-medium rounded-full border ${config.bg} ${sizeClasses} ${className}`}>
-      {showIcon ? (
-        <Icon className={size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-4 h-4' : 'w-3.5 h-3.5'} />
+    <span className={`inline-flex items-center font-medium rounded-full whitespace-nowrap ${config.tone} ${sizeClasses} ${className}`}>
+      {showIcon && (Icon === 'live' ? (
+        <span className="relative flex h-1.5 w-1.5" aria-hidden>
+          <span className="absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-70 motion-safe:animate-ping" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-600" />
+        </span>
       ) : (
-        <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-      )}
-      {displayText}
+        <Icon className={iconSize} aria-hidden />
+      ))}
+      {label || config.defaultLabel}
     </span>
   );
 }

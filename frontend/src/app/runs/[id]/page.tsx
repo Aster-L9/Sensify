@@ -9,10 +9,10 @@ import { useToast } from '@/components/ui/Toast';
 import { ErrorState, LoadingState } from '@/components/ui/States';
 import { useRunData, seriesFor } from '@/hooks/useRunData';
 import {
-  getAlerts, getBaselineAlarms, getConsistency, getGroundTruth, getRunState, getTopology, rescoreRun,
+  getAlerts, getBaselineAlarms, getConsistency, getGroundTruth, getRunIncidents, getRunState, getTopology, rescoreRun,
 } from '@/lib/api';
 import type {
-  AlertItem, BaselineAlarms, ConsistencySeries, GroundTruth, RunEvent, RunState, Segment, SegmentStateName,
+  AlertItem, BaselineAlarms, ConsistencySeries, GroundTruth, IncidentSummary, RunEvent, RunState, Segment, SegmentStateName,
 } from '@/lib/types';
 import {
   CHECK_LABELS, SCENARIO_LABELS, STATE_STYLE, formatDateTime, formatTick,
@@ -24,7 +24,9 @@ import { AnomalyBandChart, type AlarmWindow, type FlagWindow } from '@/component
 import { EventStrip } from '@/components/detection/EventStrip';
 import { EventDrawer } from '@/components/detection/EventDrawer';
 import { TrustIndicator } from '@/components/detection/TrustIndicator';
+import { EquipmentState } from '@/components/detection/EquipmentState';
 import { KindIcons, SeverityChip } from '@/components/detection/SeverityChip';
+import { ClassificationMark } from '@/components/investigation/ClassificationMark';
 
 const SYNC_ID = 'run-detail';
 
@@ -39,6 +41,7 @@ export default function RunDetailPage() {
 
   const [segments, setSegments] = useState<Segment[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [incidents, setIncidents] = useState<IncidentSummary[]>([]);
   const [consistency, setConsistency] = useState<ConsistencySeries | null>(null);
   const [state, setState] = useState<RunState | null>(null);
   const [showAlarms, setShowAlarms] = useState(false);
@@ -68,6 +71,7 @@ export default function RunDetailPage() {
     if (!run) return;
     getAlerts({ runId, limit: 500 }).then(setAlerts).catch(() => undefined);
     getConsistency(runId).then(setConsistency).catch(() => undefined);
+    getRunIncidents(runId).then(setIncidents).catch(() => undefined);
   }, [runId, revealed, run?.model_version]);
 
   useEffect(() => {
@@ -175,7 +179,7 @@ export default function RunDetailPage() {
             <Link href="/runs" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900">
               <ArrowLeft className="w-4 h-4" aria-hidden /> All runs
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900 mt-1">{run.name}</h1>
+            <h1 className="text-[28px] leading-tight text-gray-900 mt-1">{run.name}</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               Started {formatDateTime(run.started_at)}.{' '}
               {run.model_version ? `Analysed by model v${run.model_version}.` : 'Not analysed yet: no model was active at launch.'}
@@ -196,15 +200,16 @@ export default function RunDetailPage() {
         </div>
 
         <RunPlayback
-          status={run.status} revealedTicks={run.revealed_ticks} durationTicks={run.duration_ticks}
-          playbackSpeed={run.playback_speed} tick={tick} live={live && run.status === 'active' ? true : live}
-          onTick={pickTick} onLive={goLive}
+          runId={run.id} status={run.status} revealedTicks={run.revealed_ticks} durationTicks={run.duration_ticks}
+          playbackSpeed={run.playback_speed} tick={tick} live={live}
+          onTick={pickTick} onLive={goLive} canControl={isAdmin} onControlled={refresh}
         />
 
         {segments.length > 0 && (
           <div className="space-y-2">
             <PipelineSchematic segments={segments} states={states} captions={captions} selected={seg}
-              onSelect={pickSegment} label="Segments at the cursor time; select one to inspect it" />
+              onSelect={pickSegment} label="Segments at the cursor time; select one to inspect it"
+              flowing={run.status === 'active' && live} />
             <StateLegend />
           </div>
         )}
@@ -259,9 +264,10 @@ export default function RunDetailPage() {
                   <Reading label="Flow" value={segState.flow_m3h} unit="m³/h" digits={0} />
                   <Reading label="Temperature" value={segState.temperature_c} unit="°C" digits={1} />
                   <Reading label="Anomaly score" value={segState.anomaly_score} unit="" digits={2} />
-                  {segState.valve_open_pct !== null && <Reading label="Valve V-12" value={segState.valve_open_pct} unit="% open" digits={0} />}
-                  {segState.pump_speed_pct !== null && <Reading label="Pump P-3" value={segState.pump_speed_pct} unit="% speed" digits={0} />}
                 </dl>
+                <div className="mt-4 pt-3 border-t border-rule">
+                  <EquipmentState state={segState} segmentType={segState.segment_type} />
+                </div>
               </>
             ) : (
               <p className="text-sm text-gray-500 mt-2">Loading readings...</p>
@@ -271,6 +277,33 @@ export default function RunDetailPage() {
           <section className="glass-card p-5 space-y-3" aria-label="Telemetry trust">
             <h2 className="text-base font-semibold text-gray-900">Can these readings be trusted?</h2>
             <TrustIndicator score={segState?.trust_score ?? null} status={segState?.trust_status ?? null} factors={segState?.factors ?? []} />
+          </section>
+
+          <section className="glass-card p-5" aria-label="Incidents in this run">
+            <h2 className="text-base font-semibold text-gray-900">Incidents in this run</h2>
+            {incidents.length === 0 ? (
+              <p className="text-sm text-gray-500 mt-2">No incidents in this run.</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {incidents.map((i) => (
+                  <li key={i.key}>
+                    <Link href={`/incidents/${encodeURIComponent(i.key)}`}
+                      className="block rounded-xl border border-gray-200 p-3 transition-colors hover:border-brand-300 hover:bg-brand-50/40">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <ClassificationMark classification={i.classification} size="sm" />
+                        <SeverityChip severity={i.severity} />
+                      </div>
+                      <p className="mt-1.5 text-sm font-semibold text-gray-900">
+                        {i.segment_code ? `${i.segment_code} ${i.segment_name ?? ''}` : 'Not localised'}
+                      </p>
+                      <p className="font-mono tabular text-xs text-gray-500">
+                        {formatTick(i.detected_tick)}{i.developing ? ', developing' : ''}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <section className="glass-card p-5" aria-label="Alerts in this run">

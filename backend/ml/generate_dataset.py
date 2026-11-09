@@ -1,5 +1,5 @@
 """
-Seeded mock-dataset generator.
+Seeded mock-dataset generator (spec §4).
 
 Runs the simulator the live app uses (`app.sim.engine.simulate_run`) over a fixed
 plan of normal and scenario runs and writes, into one directory:
@@ -71,7 +71,7 @@ GROUND_TRUTH_COLUMNS = [
 DATA_FILES = ("runs.csv", "telemetry.csv.gz", "events.csv", "ground_truth.csv")
 EVENT_CATEGORIES = ("control", "security", "device", "process")
 
-# Calibration against the mock-data workbook.
+# Calibration against the mock-data workbook (spec §4).
 FLOW_RANGE = (780.0, 880.0)  # m³/h; the workbook's baseline flows are 800–853
 PRESSURE_RANGE = (68.0, 78.0)  # bar; the workbook's baseline pressures are 69.8–73.2
 PRESSURE_CHECKED = ("SEG-02", "SEG-04", "SEG-05")  # pipeline corridors and the valve station
@@ -526,7 +526,7 @@ def _calibration_section(checks: list[dict], info: dict[str, float]) -> list[str
         "",
         f"For information only, the mean reported pressure on normal runs at the line's control points: {info_text}. "
         "The inlet header and the pump discharge run above the corridor baseline and the delivery terminal runs "
-        "below it, by design, so they are not compared with the workbook band.",
+        "below it, by design (spec §3.1), so they are not compared with the workbook band.",
         "",
         f"{passed} of {len(checks)} checks pass.",
     ]
@@ -589,7 +589,7 @@ def generate_dataset(out_dir: Path, **plan_kwargs) -> dict:
 
 def main(argv: list[str] | None = None) -> dict:
     parser = argparse.ArgumentParser(prog="python -m ml.generate_dataset",
-                                     description="Generate the seeded Sensify mock dataset.")
+                                     description="Generate the seeded Sensify mock dataset (spec §4).")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="output directory (default: backend/ml/data)")
     parser.add_argument("--seed", type=int, default=_PLAN_DEFAULTS["seed"], help="base seed (default: 2026)")
     parser.add_argument("--small", action="store_true",

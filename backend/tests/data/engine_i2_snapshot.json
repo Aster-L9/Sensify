@@ -1,0 +1,223 @@
+{
+  "config": {
+    "event_lookback_ticks": 60,
+    "gap_ticks": 36,
+    "margin": 0.15,
+    "min_score": 0.35,
+    "response_window_ticks": 24,
+    "setpoint_min_ticks": 6,
+    "setpoint_settle_ticks": 6,
+    "setpoint_tol_pct": 5.0
+  },
+  "engine_version": "i2",
+  "runs": {
+    "DS-0061": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0062": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0063": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0064": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0065": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0066": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0067": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0068": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0069": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0070": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0071": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0072": {
+      "classification": [
+        "normal_behaviour"
+      ],
+      "segment": [
+        "SEG-03"
+      ]
+    },
+    "DS-0073": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0074": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0075": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0076": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0077": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0078": {
+      "classification": [
+        "sensor_fault"
+      ],
+      "segment": [
+        "SEG-01"
+      ]
+    },
+    "DS-0079": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0080": {
+      "classification": [],
+      "segment": []
+    },
+    "DS-0081": {
+      "classification": "physical_anomaly",
+      "segment": "SEG-02"
+    },
+    "DS-0082": {
+      "classification": "sensor_fault",
+      "segment": "SEG-01"
+    },
+    "DS-0083": {
+      "classification": "cyber_manipulation",
+      "segment": "SEG-01"
+    },
+    "DS-0084": {
+      "classification": "cyber_manipulation",
+      "segment": "SEG-05"
+    },
+    "DS-0085": {
+      "classification": null,
+      "segment": null
+    },
+    "DS-0086": {
+      "classification": "physical_anomaly",
+      "segment": null
+    },
+    "DS-0087": {
+      "classification": null,
+      "segment": null
+    },
+    "DS-0088": {
+      "classification": "cyber_manipulation",
+      "segment": "SEG-01"
+    },
+    "DS-0089": {
+      "classification": "cyber_manipulation",
+      "segment": "SEG-03"
+    },
+    "DS-0090": {
+      "classification": "reporting_inconsistency",
+      "segment": "SEG-02"
+    },
+    "DS-0091": {
+      "classification": "physical_anomaly",
+      "segment": "SEG-02"
+    },
+    "DS-0092": {
+      "classification": "uncertain",
+      "segment": null
+    },
+    "DS-0093": {
+      "classification": "cyber_manipulation",
+      "segment": "SEG-03"
+    },
+    "DS-0094": {
+      "classification": "cyber_manipulation",
+      "segment": "SEG-03"
+    },
+    "DS-0095": {
+      "classification": "reporting_inconsistency",
+      "segment": "SEG-03"
+    },
+    "DS-0096": {
+      "classification": "physical_anomaly",
+      "segment": "SEG-02"
+    },
+    "DS-0097": {
+      "classification": "sensor_fault",
+      "segment": "SEG-02"
+    },
+    "DS-0098": {
+      "classification": "sensor_fault",
+      "segment": "SEG-02"
+    },
+    "DS-0099": {
+      "classification": "cyber_manipulation",
+      "segment": "SEG-05"
+    },
+    "DS-0100": {
+      "classification": "uncertain",
+      "segment": null
+    },
+    "DS-0101": {
+      "classification": "uncertain",
+      "segment": null
+    },
+    "DS-0102": {
+      "classification": "sensor_fault",
+      "segment": "SEG-02"
+    },
+    "DS-0103": {
+      "classification": "cyber_manipulation",
+      "segment": "SEG-05"
+    },
+    "DS-0104": {
+      "classification": "cyber_manipulation",
+      "segment": "SEG-03"
+    },
+    "DS-0105": {
+      "classification": "reporting_inconsistency",
+      "segment": "SEG-05"
+    },
+    "DS-0106": {
+      "classification": null,
+      "segment": null
+    },
+    "DS-0107": {
+      "classification": "sensor_fault",
+      "segment": "SEG-02"
+    },
+    "DS-0108": {
+      "classification": "uncertain",
+      "segment": "SEG-03"
+    },
+    "DS-0109": {
+      "classification": "cyber_manipulation",
+      "segment": "SEG-03"
+    },
+    "DS-0110": {
+      "classification": "physical_anomaly",
+      "segment": "SEG-06"
+    }
+  }
+}

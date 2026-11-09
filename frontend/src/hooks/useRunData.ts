@@ -16,7 +16,8 @@ export interface RunData {
   refresh: () => Promise<void>;
 }
 
-/** Everything a run view needs, refreshed every 2 s while the run is still playing. */
+/** Everything a run view needs, refreshed every 2 s while the run plays and every 5 s while it is paused
+ *  (an administrator elsewhere may resume or reset it). */
 export function useRunData(runId: number | null): RunData {
   const [run, setRun] = useState<RunOut | null>(null);
   const [telemetry, setTelemetry] = useState<TelemetryPoint[]>([]);
@@ -52,6 +53,7 @@ export function useRunData(runId: number | null): RunData {
   }, [refresh]);
 
   usePolling(refresh, 2000, run?.status === 'active');
+  usePolling(refresh, 5000, run?.status === 'paused');
 
   return { run, telemetry, anomalies, trust, events, loading, error, refresh };
 }

@@ -18,6 +18,7 @@ class ObservableEvent:
     event_type: str
     authorized: str
     severity: str
+    details: str = ""
 
 
 @dataclass

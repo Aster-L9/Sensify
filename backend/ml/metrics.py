@@ -1,5 +1,5 @@
 """
-Evaluation metrics and target checks.
+Evaluation metrics (spec §6.2) and target checks (spec §6.3).
 
 Ground-truth labels are used here, and only here: to measure what the detector did.
 """

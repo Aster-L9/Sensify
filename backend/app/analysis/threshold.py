@@ -1,6 +1,6 @@
 """
-Threshold-monitoring baseline: classic SCADA-style HI/LO limits and a
-rate-of-change alarm per segment and variable, kept as a baseline to compare the ML model against.
+Threshold-monitoring baseline (spec §5.6): classic SCADA-style HI/LO limits and a
+rate-of-change alarm per segment and variable, kept for comparison in Sprint 3.
 """
 from dataclasses import dataclass
 

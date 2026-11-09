@@ -1,8 +1,8 @@
 """
-ML normal-behaviour model: one Isolation Forest per segment, trained only
+ML normal-behaviour model (spec §5.2): one Isolation Forest per segment, trained only
 on normal runs, with scores calibrated so 0.5 is the decision threshold.
 
-The model artifact also carries the reference profile, which the
+The model artifact also carries the reference profile (spec §5.3), which the
 consistency checks and the threshold baseline use.
 """
 from dataclasses import dataclass, field
@@ -81,12 +81,15 @@ class DetectorModel:
 
     def raw_scores(self, run: ReportedRun) -> np.ndarray:
         feats = build_features(run)
-        out = np.empty((run.n_ticks, N_SEG))
+        out = np.full((run.n_ticks, N_SEG), np.nan)
         for i, (mean, std) in enumerate(self.scalers):
-            out[:, i] = -self.forests[i].score_samples((feats[i] - mean) / std)
+            complete = ~np.isnan(feats[i]).any(axis=1)
+            if complete.any():
+                out[complete, i] = -self.forests[i].score_samples((feats[i][complete] - mean) / std)
         return out
 
     def score(self, run: ReportedRun) -> np.ndarray:
+        """Calibrated scores; NaN where a feature is missing (no reading means no score, not a normal one)."""
         raw = self.raw_scores(run)
         thr = np.array([c[0] for c in self.calib])
         scale = np.array([c[1] for c in self.calib])

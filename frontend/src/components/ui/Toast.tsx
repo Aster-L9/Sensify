@@ -18,6 +18,14 @@ interface ToastContextType {
   error: (title: string, description?: string) => void;
 }
 
+const TOAST_MS = 4000;
+const TONES: Record<ToastType, { icon: typeof Info; icon_class: string; bar: string }> = {
+  success: { icon: CheckCircle2, icon_class: 'text-brand-600', bar: 'bg-brand-500' },
+  error: { icon: XCircle, icon_class: 'text-red-600', bar: 'bg-red-500' },
+  warning: { icon: AlertCircle, icon_class: 'text-amber-600', bar: 'bg-amber-500' },
+  info: { icon: Info, icon_class: 'text-brand-600', bar: 'bg-brand-500' },
+};
+
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -33,7 +41,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
     setTimeout(() => {
       removeToast(id);
-    }, 4000);
+    }, TOAST_MS);
   }, [removeToast]);
 
   const success = useCallback((title: string, description?: string) => {
@@ -47,38 +55,33 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast, success, error }}>
       {children}
-      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl glass-card border shadow-2xl animate-slide-in-up transition-all ${
-              t.type === 'success'
-                ? 'border-brand-500/30 bg-brand-500/10'
-                : t.type === 'error'
-                ? 'border-red-500/30 bg-red-500/10'
-                : t.type === 'warning'
-                ? 'border-accent-peach/30 bg-accent-peach/10'
-                : 'border-brand-500/30 bg-brand-500/10'
-            }`}
-          >
-            {t.type === 'success' && <CheckCircle2 className="w-5 h-5 text-brand-500 shrink-0 mt-0.5" />}
-            {t.type === 'error' && <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />}
-            {t.type === 'warning' && <AlertCircle className="w-5 h-5 text-accent-peach shrink-0 mt-0.5" />}
-            {t.type === 'info' && <Info className="w-5 h-5 text-brand-500 shrink-0 mt-0.5" />}
-
-            <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-semibold text-gray-900">{t.title}</h4>
-              {t.description && <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{t.description}</p>}
-            </div>
-
-            <button
-              onClick={() => removeToast(t.id)}
-              className="text-gray-500 hover:text-gray-800 p-1 rounded-lg hover:bg-gray-50 transition-colors"
+      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 max-w-sm w-[calc(100%-3rem)] pointer-events-none" aria-live="polite">
+        {toasts.map((t) => {
+          const tone = TONES[t.type];
+          const Icon = tone.icon;
+          return (
+            <div
+              key={t.id}
+              role={t.type === 'error' ? 'alert' : 'status'}
+              className="pointer-events-auto relative overflow-hidden flex items-start gap-3 p-4 pr-3 rounded-2xl bg-white shadow-lift animate-slide-in-up"
             >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
+              <Icon className={`w-5 h-5 shrink-0 mt-0.5 ${tone.icon_class}`} aria-hidden />
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-gray-900">{t.title}</h4>
+                {t.description && <p className="text-sm text-gray-600 mt-0.5 leading-snug">{t.description}</p>}
+              </div>
+              <button
+                onClick={() => removeToast(t.id)}
+                className="text-gray-400 hover:text-gray-800 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Dismiss"
+              >
+                <X className="w-4 h-4" aria-hidden />
+              </button>
+              {/* How long until it goes away on its own. */}
+              <span className={`absolute left-0 bottom-0 h-0.5 ${tone.bar} origin-left`} style={{ width: '100%', animation: `toast-life ${TOAST_MS}ms linear forwards` }} aria-hidden />
+            </div>
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );
