@@ -55,7 +55,7 @@ def reported_from_db(db: Session, run_id: int, max_tick: int | None = None) -> R
     if max_tick is not None:
         ev_query = ev_query.filter(Event.tick <= max_tick)
     events = [ObservableEvent(e.tick, code.get(e.segment_id), e.source, e.category, e.event_type, e.authorized,
-                              e.severity) for e in ev_query.order_by(Event.tick, Event.id).all()]
+                              e.severity, e.details or "") for e in ev_query.order_by(Event.tick, Event.id).all()]
     return ReportedRun(**arrays, events=events)
 
 
@@ -63,7 +63,12 @@ def model_for_run(db: Session, run: Run) -> DetectorModel | None:
     if run.model_version_id is None:
         return None
     mv = db.get(ModelVersion, run.model_version_id)
-    return load_model(mv) if mv and artifact_file(mv).exists() else None
+    return load_model(mv) if mv and artifact_file(mv).is_file() else None
+
+
+def _rounded(value: float) -> float | None:
+    """None where the analysis had no value (missing readings), so nothing reads as a measured 0 or 1."""
+    return None if np.isnan(value) else round(float(value), 4)
 
 
 def _baseline_cell(baseline, t: int, i: int) -> dict:
@@ -91,7 +96,7 @@ def score_run(db: Session, run: Run) -> bool:
     db.execute(delete(Alert).where(Alert.run_id == run.id))
     db.execute(delete(Event).where(Event.run_id == run.id, Event.origin == "analysis"))
 
-    penalised = sum(out.trust.raw_penalties.values()) > 0
+    penalised = (sum(out.trust.raw_penalties.values()) > 0) | out.trust.insufficient
     rows = []
     for t in range(reported.n_ticks):
         for i, seg_id in enumerate(seg_ids):
@@ -99,8 +104,8 @@ def score_run(db: Session, run: Run) -> bool:
             checks = {c: int(out.checks.status[c][t, i]) for c in CHECKS if out.checks.status[c][t, i]}
             rows.append({
                 "run_id": run.id, "segment_id": seg_id, "tick": t, "model_version_id": mv.id,
-                "anomaly_score": round(float(out.scores[t, i]), 4), "ml_flag": bool(out.ml_flag[t, i]),
-                "trust_score": round(float(out.trust.score[t, i]), 4), "trust_status": str(out.trust.status[t, i]),
+                "anomaly_score": _rounded(out.scores[t, i]), "ml_flag": bool(out.ml_flag[t, i]),
+                "trust_score": _rounded(out.trust.score[t, i]), "trust_status": str(out.trust.status[t, i]),
                 "trust_factors": json.dumps(factors), "checks": json.dumps(checks),
                 "baseline_alarms": json.dumps(_baseline_cell(out.baseline, t, i)), "state": str(out.state[t, i]),
             })
@@ -120,6 +125,9 @@ def score_run(db: Session, run: Run) -> bool:
         } for e in out.events])
     run.model_version_id = mv.id
     db.commit()
+    from app.services import investigation  # local import: investigation imports this module
+
+    investigation.store_incidents(db, run, reported, out, model)
     return True
 
 
@@ -149,7 +157,7 @@ def results_grid(db: Session, run: Run, cutoff: int) -> dict:
         i = col[r.segment_id]
         grid["scores"][r.tick, i] = r.anomaly_score or 0.0
         grid["ml_flag"][r.tick, i] = r.ml_flag
-        grid["trust"][r.tick, i] = r.trust_score
+        grid["trust"][r.tick, i] = np.nan if r.trust_score is None else r.trust_score
         grid["status"][r.tick, i] = r.trust_status
         grid["state"][r.tick, i] = r.state
         grid["factors"][r.tick, i] = r.trust_factors

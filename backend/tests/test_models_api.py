@@ -13,7 +13,7 @@ def test_models_list_shows_metrics(client, analyst_headers, tiny_model):
     v1 = next(m for m in models if m["version"] == 1)
     assert v1["status"] == "ready" and v1["is_active"] and v1["targets_total"] == 8
     detail = client.get(f"/models/{v1['id']}", headers=analyst_headers).json()
-    assert "ml" in detail["metrics"] and "per_type" in detail["metrics"]["ml"] and detail["targets_check"]
+    assert "ml" in detail["metrics"] and "per_type" not in detail["metrics"]["ml"] and detail["targets_check"]
 
 
 def test_failed_training_keeps_active_model(client, admin_headers, tiny_model, monkeypatch):

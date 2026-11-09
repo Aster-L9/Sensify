@@ -1,5 +1,5 @@
 """
-Process-consistency checks across related variables and neighbouring segments.
+Process-consistency checks across related variables and neighbouring segments (spec §5.4).
 
 Each check yields a level per tick and segment: 0 ok, 1 warn, 2 fail. Pair checks
 (flow balance, pressure gradient) are attributed to both members of the pair; a

@@ -1,0 +1,73 @@
+run_id,ambiguous,expected_category,acceptable_outcomes,expected_segment,expected_ot_layers,ambiguity_note
+HO-0001,False,normal_behaviour,normal_behaviour,,,
+HO-0002,False,normal_behaviour,normal_behaviour,,,
+HO-0003,False,normal_behaviour,normal_behaviour,,,
+HO-0004,False,normal_behaviour,normal_behaviour,,,
+HO-0005,False,normal_behaviour,normal_behaviour,,,
+HO-0006,False,normal_behaviour,normal_behaviour,,,
+HO-0007,False,normal_behaviour,normal_behaviour,,,
+HO-0008,False,normal_behaviour,normal_behaviour,,,
+HO-0009,False,normal_behaviour,normal_behaviour,,,
+HO-0010,False,normal_behaviour,normal_behaviour,,,
+HO-0011,False,normal_behaviour,normal_behaviour,,,
+HO-0012,False,normal_behaviour,normal_behaviour,,,
+HO-0013,True,physical_anomaly,physical_anomaly|uncertain,SEG-06,physical_process,"Small leak at SEG-06, an end segment with few neighbours to corroborate."
+HO-0014,True,physical_anomaly,physical_anomaly|uncertain,SEG-06,physical_process,"Small leak at SEG-06, an end segment with few neighbours to corroborate."
+HO-0015,True,physical_anomaly,physical_anomaly|uncertain,SEG-01,physical_process,"Small leak at SEG-01, an end segment with few neighbours to corroborate."
+HO-0016,True,physical_anomaly,physical_anomaly|uncertain,SEG-01,physical_process,"Small leak at SEG-01, an end segment with few neighbours to corroborate."
+HO-0017,True,physical_anomaly,physical_anomaly|normal_behaviour|uncertain,SEG-04,physical_process,Scenario onset falls within 1 minute of a routine authorized operator command.
+HO-0018,False,physical_anomaly,physical_anomaly,SEG-02,physical_process,
+HO-0019,False,physical_anomaly,physical_anomaly,SEG-04,physical_process,
+HO-0020,False,physical_anomaly,physical_anomaly,SEG-06,physical_process,
+HO-0021,False,physical_anomaly,physical_anomaly,SEG-06,physical_process,
+HO-0022,False,physical_anomaly,physical_anomaly,SEG-05,physical_process,
+HO-0023,False,physical_anomaly,physical_anomaly,SEG-01,physical_process,
+HO-0024,False,physical_anomaly,physical_anomaly,SEG-05,physical_process,
+HO-0025,True,sensor_fault,sensor_fault|uncertain,SEG-05,field_device,"Slow, small sensor drift that grows gradually."
+HO-0026,True,sensor_fault,sensor_fault|uncertain,SEG-02,field_device,"Slow, small sensor drift that grows gradually."
+HO-0027,True,sensor_fault,sensor_fault|uncertain,SEG-04,field_device,"Slow, small sensor drift that grows gradually."
+HO-0028,True,sensor_fault,sensor_fault|uncertain,SEG-01,field_device,"Slow, small sensor drift that grows gradually."
+HO-0029,True,sensor_fault,sensor_fault|normal_behaviour|uncertain,SEG-05,field_device,Scenario onset falls within 1 minute of a routine authorized operator command.
+HO-0030,False,sensor_fault,sensor_fault,SEG-05,field_device,
+HO-0031,False,sensor_fault,sensor_fault,SEG-05,field_device,
+HO-0032,False,sensor_fault,sensor_fault,SEG-05,field_device,
+HO-0033,False,sensor_fault,sensor_fault,SEG-06,field_device,
+HO-0034,False,sensor_fault,sensor_fault,SEG-03,field_device,
+HO-0035,False,sensor_fault,sensor_fault,SEG-06,field_device,
+HO-0036,False,sensor_fault,sensor_fault,SEG-02,field_device,
+HO-0037,True,cyber_manipulation,cyber_manipulation|sensor_fault|uncertain,SEG-06,reporting,False offset with no reporting configuration change event; resembles a sensor fault.
+HO-0038,True,cyber_manipulation,cyber_manipulation|sensor_fault|uncertain,SEG-06,reporting,False offset with no reporting configuration change event; resembles a sensor fault.
+HO-0039,True,cyber_manipulation,cyber_manipulation|sensor_fault|uncertain,SEG-02,reporting,False offset with no reporting configuration change event; resembles a sensor fault.
+HO-0040,True,cyber_manipulation,cyber_manipulation|sensor_fault|uncertain,SEG-05,reporting,False offset with no reporting configuration change event; resembles a sensor fault.
+HO-0041,False,cyber_manipulation,cyber_manipulation,SEG-06,reporting,
+HO-0042,False,cyber_manipulation,cyber_manipulation,SEG-03,reporting,
+HO-0043,False,cyber_manipulation,cyber_manipulation,SEG-06,reporting,
+HO-0044,False,cyber_manipulation,cyber_manipulation,SEG-01,reporting,
+HO-0045,False,cyber_manipulation,cyber_manipulation,SEG-05,reporting,
+HO-0046,False,cyber_manipulation,cyber_manipulation,SEG-01,reporting,
+HO-0047,False,cyber_manipulation,cyber_manipulation,SEG-01,reporting,
+HO-0048,False,cyber_manipulation,cyber_manipulation,SEG-01,reporting,
+HO-0049,True,cyber_manipulation,cyber_manipulation|uncertain,SEG-03,control,Unauthorized control with no command-from-unregistered-workstation event.
+HO-0050,True,cyber_manipulation,cyber_manipulation|uncertain,SEG-05,control,Unauthorized control with no command-from-unregistered-workstation event.
+HO-0051,True,cyber_manipulation,cyber_manipulation|uncertain,SEG-03,control,Unauthorized control with no command-from-unregistered-workstation event.
+HO-0052,True,cyber_manipulation,cyber_manipulation|uncertain,SEG-05,control,Unauthorized control with no command-from-unregistered-workstation event.
+HO-0053,True,cyber_manipulation,cyber_manipulation|normal_behaviour|uncertain,SEG-05,control,Scenario onset falls within 1 minute of a routine authorized operator command.
+HO-0054,False,cyber_manipulation,cyber_manipulation,SEG-05,control,
+HO-0055,False,cyber_manipulation,cyber_manipulation,SEG-03,control,
+HO-0056,False,cyber_manipulation,cyber_manipulation,SEG-05,control,
+HO-0057,False,cyber_manipulation,cyber_manipulation,SEG-03,control,
+HO-0058,False,cyber_manipulation,cyber_manipulation,SEG-03,control,
+HO-0059,False,cyber_manipulation,cyber_manipulation,SEG-05,control,
+HO-0060,False,cyber_manipulation,cyber_manipulation,SEG-03,control,
+HO-0061,True,reporting_inconsistency,reporting_inconsistency|normal_behaviour|uncertain,SEG-01,physical_process|reporting,Scenario onset falls within 1 minute of a routine authorized operator command.
+HO-0062,False,reporting_inconsistency,reporting_inconsistency,SEG-06,physical_process|reporting,
+HO-0063,False,reporting_inconsistency,reporting_inconsistency,SEG-04,physical_process|reporting,
+HO-0064,False,reporting_inconsistency,reporting_inconsistency,SEG-04,physical_process|reporting,
+HO-0065,False,reporting_inconsistency,reporting_inconsistency,SEG-04,physical_process|reporting,
+HO-0066,False,reporting_inconsistency,reporting_inconsistency,SEG-06,physical_process|reporting,
+HO-0067,False,reporting_inconsistency,reporting_inconsistency,SEG-02,physical_process|reporting,
+HO-0068,False,reporting_inconsistency,reporting_inconsistency,SEG-03,physical_process|reporting,
+HO-0069,False,reporting_inconsistency,reporting_inconsistency,SEG-06,physical_process|reporting,
+HO-0070,False,reporting_inconsistency,reporting_inconsistency,SEG-06,physical_process|reporting,
+HO-0071,False,reporting_inconsistency,reporting_inconsistency,SEG-06,physical_process|reporting,
+HO-0072,False,reporting_inconsistency,reporting_inconsistency,SEG-04,physical_process|reporting,

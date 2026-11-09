@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-50 text-gray-900 font-sans antialiased selection:bg-brand-500/30 selection:text-brand-700">
+      <body className="bg-canvas text-gray-900 font-sans antialiased">
         <AuthProvider>
           <ToastProvider>
             <AppShell>{children}</AppShell>

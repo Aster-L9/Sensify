@@ -1,5 +1,5 @@
 """
-Quasi-steady hydraulic model of the six-segment chain.
+Quasi-steady hydraulic model of the six-segment chain (spec §3.2).
 
 Pressures are marched from the inlet header through each segment for a trial
 upstream flow; the flow is bisected until the outlet matches the delivery pressure.

@@ -1,4 +1,4 @@
-"""Analysis endpoints for one run. Every series stops at the reveal cutoff."""
+"""Analysis endpoints for one run (spec §8). Every series stops at the reveal cutoff."""
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,6 +11,7 @@ from app.auth import get_current_user, require_admin
 from app.database import get_db
 from app.models import ActivityLog, AnalysisResult, User
 from app.routes.runs import get_run_or_404
+from app.models import ModelVersion
 from app.services.registry import get_active
 from app.services import runs as runs_service
 from app.services.runs import resolve_tick
@@ -62,8 +63,9 @@ def get_trust(run_id: int, db: Session = Depends(get_db), user: User = Depends(g
             seg["factors"].append(r.trust_factors)
     for seg in out.values():
         factors = seg.pop("factors")
+        scored = [t for t, v in enumerate(seg["trust"]) if v is not None]  # None: insufficient readings
         if seg["trust"]:
-            low = min(range(len(seg["trust"])), key=seg["trust"].__getitem__)
+            low = min(scored, key=seg["trust"].__getitem__) if scored else len(seg["trust"]) - 1
             seg["current"] = {"score": seg["trust"][-1], "status": seg["status"][-1], "factors": json.loads(factors[-1])}
             seg["series_factors_at_min"] = json.loads(factors[low])
             seg["min_tick"] = low
@@ -109,7 +111,11 @@ def rescore_run(run_id: int, db: Session = Depends(get_db), admin: User = Depend
     run = get_run_or_404(db, run_id)
     active = get_active(db)
     if active is None:
-        raise HTTPException(status_code=409, detail="No active model. Train or activate a model first.")
+        chosen = db.query(ModelVersion).filter(ModelVersion.is_active.is_(True)).first()
+        detail = (f"The active model v{chosen.version} has no model file in the model store. "
+                  "Activate another version or restore its files." if chosen
+                  else "No active model. Train or activate a model first.")
+        raise HTTPException(status_code=409, detail=detail)
     score_run(db, run)
     db.add(ActivityLog(user_id=admin.id, action="run_rescored", entity_type="run", entity_id=run.id,
                        details=f"Re-scored {run.name} with model v{active[0].version}", timestamp=runs_service.utcnow()))

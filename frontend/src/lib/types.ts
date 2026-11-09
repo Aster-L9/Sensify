@@ -1,7 +1,9 @@
-// Shapes returned by the Sensify API.
+// Shapes returned by the Sensify API (docs/sprint2/design.md §8).
 
-export type SegmentStateName = 'normal' | 'anomalous' | 'low_trust';
-export type TrustStatus = 'Supported' | 'Review' | 'Contradicted';
+// insufficient: not enough reported readings to judge the segment (missing, intermittent or no neighbour).
+export type SegmentStateName = 'normal' | 'anomalous' | 'low_trust' | 'insufficient';
+export type RunStatus = 'active' | 'paused' | 'completed';
+export type TrustStatus = 'Supported' | 'Review' | 'Contradicted' | 'Insufficient';
 export type Severity = 'medium' | 'high' | 'critical';
 export type AlertKind = 'anomaly' | 'low_trust';
 export type EventCategory = 'control' | 'security' | 'device' | 'process' | 'analysis';
@@ -39,7 +41,8 @@ export interface RunOut {
   id: number;
   name: string;
   description: string | null;
-  status: 'active' | 'completed';
+  status: RunStatus;
+  paused_at: string | null;
   created_by: number | null;
   creator_username: string | null;
   created_at: string;
@@ -91,7 +94,7 @@ export interface SegmentState {
 
 export interface RunState {
   run_id: number;
-  status: 'active' | 'completed';
+  status: RunStatus;
   tick: number;
   revealed_ticks: number;
   duration_ticks: number;
@@ -149,6 +152,7 @@ export interface AlertItem {
   summary: string;
   ongoing: boolean;
   start_time: string;
+  incident_key?: string | null;
 }
 
 export interface AnomalySeries {
@@ -167,9 +171,9 @@ export interface TrustSeries {
   segments: {
     segment_id: number;
     code: string;
-    trust: number[];
+    trust: (number | null)[]; // null where the readings were insufficient to judge
     status: TrustStatus[];
-    current: { score: number; status: TrustStatus; factors: TrustFactor[] } | null;
+    current: { score: number | null; status: TrustStatus; factors: TrustFactor[] } | null;
     series_factors_at_min: TrustFactor[];
     min_tick?: number;
   }[];
@@ -292,12 +296,30 @@ export interface ModelVersion {
   headline: ModelHeadline;
   targets_passed: number;
   targets_total: number;
+  artifact_available: boolean | null;
+  has_validation: boolean;
+}
+
+/** Outcomes on the validation split, kept apart from the test metrics (handover DH-09). */
+export interface ValidationOutcomes {
+  split: 'validation';
+  dataset: string;
+  runs: number;
+  normal_runs: number;
+  scenario_runs: number;
+  by_type: Record<string, number>;
+  model_version: number;
+  computed: 'at training' | 'after training';
+  computed_at: string;
+  note: string;
+  metrics: { ml: DetectionMetrics; baseline: DetectionMetrics; trust: TrustMetrics };
 }
 
 export interface ModelDetail extends ModelVersion {
   metrics: { ml?: DetectionMetrics; baseline?: DetectionMetrics; trust?: TrustMetrics };
+  validation: ValidationOutcomes | null; // null: this version never recorded validation outcomes
   targets_check: Record<string, TargetCheck>;
-  targets: Record<string, { metric: string; op: '>=' | '<='; value: number; label?: string }>;
+  targets: Record<string, { metric: string; op: '>=' | '<='; value: number; label?: string; datasets?: EvalDatasetName[] }>;
   dataset: { path?: string; runs?: number; splits?: Record<string, Record<string, number>> };
 }
 
@@ -306,7 +328,7 @@ export interface TrustAlert {
   segment_id: number;
   code: string;
   name: string;
-  trust_score: number;
+  trust_score: number | null;
   trust_status: TrustStatus;
   top_factor: TrustFactor | null;
 }
@@ -337,6 +359,10 @@ export interface DashboardSummary {
   trust_alerts: TrustAlert[];
   recent_trust_alerts: AlertItem[];
   alerts_per_day: { date: string; anomaly: number; low_trust: number }[];
+  incidents_by_classification: Record<Classification, number>;
+  open_investigations: IncidentSummary[];
+  latest_evaluation: LatestEvaluationSummary | null;
+  demo_run_id: number | null;
 }
 
 export interface ScenarioMethod {
@@ -377,4 +403,181 @@ export interface ScenarioLaunch {
   seed?: number;
   name?: string;
   description?: string;
+}
+
+// ── Sprint 3: investigation and evaluation ───────────────────────────────────
+export type Classification =
+  | 'normal_behaviour'
+  | 'physical_anomaly'
+  | 'sensor_fault'
+  | 'cyber_manipulation'
+  | 'reporting_inconsistency'
+  | 'uncertain';
+export type IncidentStatus = 'developing' | 'open' | 'investigating' | 'resolved';
+export type OtLayer = 'physical_process' | 'field_device' | 'control' | 'reporting';
+
+export interface IncidentSummary {
+  key: string;
+  run_id: number;
+  run_name: string;
+  status: IncidentStatus;
+  developing: boolean;
+  classification: Classification;
+  classification_label: string;
+  confidence: number;
+  confidence_label: string;
+  segment_code: string | null;
+  segment_name: string | null;
+  ot_layers: OtLayer[];
+  ot_layer_labels: string[];
+  localisation_note: string;
+  severity: Severity;
+  start_tick: number;
+  end_tick: number;
+  detected_tick: number;
+  detected_time: string;
+  summary: string;
+  evidence_count: number;
+  status_note: string | null;
+  resolved_by: number | null;
+  resolved_at: string | null;
+}
+
+export interface EvidenceLink {
+  type: 'run' | 'event';
+  tick: number;
+  segment: string | null;
+  [k: string]: unknown;
+}
+
+export interface EvidenceItem {
+  id: string;
+  kind: string;
+  tick: number;
+  end_tick: number;
+  segment: string | null;
+  observation: string;
+  interpretation: string;
+  supports: Partial<Record<Classification, number>>;
+  link: EvidenceLink;
+}
+
+export interface Hypothesis {
+  category: Classification;
+  score: number;
+  evidence_ids: string[];
+}
+
+export interface ChainStage {
+  stage: string;
+  label: string;
+  tick: number;
+  segment: string | null;
+  evidence_ids: string[];
+}
+
+export interface Technique {
+  technique_id: string;
+  name: string;
+  tactic: string;
+  reason: string;
+  evidence_ids: string[];
+}
+
+export interface TimelineEntry {
+  tick: number;
+  segment: string | null;
+  kind: string;
+  observation: string;
+  interpretation: string;
+  evidence_id: string;
+}
+
+export interface IncidentDetail extends IncidentSummary {
+  hypotheses: Hypothesis[];
+  evidence: EvidenceItem[];
+  timeline: TimelineEntry[];
+  chain: ChainStage[];
+  mitre: Technique[];
+  actions: string[];
+  uncertainty: Record<string, unknown> | null;
+  windows: [string, number, number][];
+}
+
+export interface IncidentFilters {
+  runId?: number;
+  classification?: Classification;
+  status?: IncidentStatus;
+  severity?: Severity;
+  segment?: string;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  limit?: number;
+}
+
+export type EvalSystem = 'A' | 'B' | 'C';
+export type EvalDatasetName = 'development' | 'heldout';
+
+export interface InvestigationMetrics {
+  incident_detection: DetectionRate | null;
+  classification_accuracy: DetectionRate | null;
+  decision_coverage: DetectionRate | null;
+  ambiguity_handled: DetectionRate | null;
+  segment_localisation: DetectionRate | null;
+  ot_layer_accuracy: DetectionRate | null;
+  incidents_per_normal_run: number | null;
+  unexplained_per_normal_run: number | null;
+  incidents_outside_event: number;
+  confusion: Record<string, Record<string, number>>;
+}
+
+export interface EvaluationDataset {
+  runs: number;
+  trust: TrustMetrics;
+  systems: Record<EvalSystem, { detection: DetectionMetrics; investigation: InvestigationMetrics }>;
+}
+
+export interface EvaluationResults {
+  engine_version: string;
+  model_version: number | string | null;
+  created_at: string;
+  datasets: Record<EvalDatasetName, EvaluationDataset>;
+  targets: Record<string, { metric: string; op: '>=' | '<='; value: number; label?: string; datasets?: EvalDatasetName[] }>;
+  targets_check: Record<EvalDatasetName, Record<string, TargetCheck>>;
+}
+
+export interface EvaluationRunOut {
+  id: number;
+  version: number;
+  status: 'running' | 'ready' | 'failed';
+  created_at: string;
+  created_by?: string | null;
+  model_version: number | null;
+  engine_version: string | null;
+  seconds: number | null;
+  error: string | null;
+  shipped: boolean;
+}
+
+export interface EvaluationDetail extends EvaluationRunOut {
+  results: EvaluationResults | null;
+}
+
+export interface EvaluationHeadline {
+  detection_rate: number | null;
+  incidents_per_normal_run: number | null;
+  classification_accuracy: number | null;
+}
+
+export interface LatestEvaluationSummary {
+  id: number;
+  version: number;
+  created_at: string;
+  development: Record<EvalSystem, EvaluationHeadline>;
+  heldout: Record<EvalSystem, EvaluationHeadline>;
+}
+
+export interface DemoState {
+  run_id: number | null;
+  [k: string]: unknown;
 }

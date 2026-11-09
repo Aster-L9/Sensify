@@ -32,6 +32,8 @@ CREDENTIALS.md
 *.sqlite-*
 *.sqlite3
 *.sqlite3-*
+# Backup copy written when an older local database is upgraded
+*.bak
 
 # Tests, caches, and logs
 .pytest_cache/

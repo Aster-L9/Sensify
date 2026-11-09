@@ -1,4 +1,4 @@
-"""Seeded dataset generator and the generated dataset."""
+"""Task 7: seeded dataset generator and generated dataset (spec §4)."""
 import re
 
 import numpy as np

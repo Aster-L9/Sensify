@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
+import { CircleDashed, ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
 import { TRUST_STYLE } from '@/lib/detection';
 import type { TrustFactor, TrustStatus } from '@/lib/types';
 
-const ZONES: { status: TrustStatus; from: number; to: number; fill: string }[] = [
+const ZONES: { status: Exclude<TrustStatus, 'Insufficient'>; from: number; to: number; fill: string }[] = [
   { status: 'Contradicted', from: 0, to: 0.4, fill: '#FBCFE8' },
   { status: 'Review', from: 0.4, to: 0.7, fill: '#FCE7F3' },
   { status: 'Supported', from: 0.7, to: 1, fill: '#EEF0FB' },
@@ -15,6 +15,7 @@ const ICONS: Record<TrustStatus, typeof ShieldCheck> = {
   Supported: ShieldCheck,
   Review: ShieldAlert,
   Contradicted: ShieldX,
+  Insufficient: CircleDashed,
 };
 
 interface TrustIndicatorProps {
@@ -26,6 +27,27 @@ interface TrustIndicatorProps {
 
 /** How believable a segment's reported readings are, and what lowered that belief. */
 export function TrustIndicator({ score, status, factors, compact = false }: TrustIndicatorProps) {
+  if (status === 'Insufficient') {
+    // Missing readings are neither support nor contradiction: no score, just why it cannot be judged.
+    const tone = TRUST_STYLE.Insufficient;
+    return (
+      <div className="space-y-3">
+        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-semibold"
+          style={{ background: tone.soft, color: tone.color }}>
+          <CircleDashed className="w-4 h-4" aria-hidden /> {tone.label}
+        </span>
+        <p className="text-sm text-gray-600">Too few readings arrived to say whether this segment&apos;s telemetry can be trusted.</p>
+        <ul className="space-y-2">
+          {factors.map((f) => (
+            <li key={f.label + f.detail} className="text-sm">
+              <span className="font-semibold text-gray-800">{f.label}</span>
+              <p className="text-gray-600 leading-snug mt-0.5">{f.detail}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
   if (score === null || status === null) {
     return <p className="text-sm text-gray-500">Trust is shown once the run has been scored by a model.</p>;
   }
@@ -51,7 +73,7 @@ export function TrustIndicator({ score, status, factors, compact = false }: Trus
             <div key={z.status} style={{ width: `${(z.to - z.from) * 100}%`, background: z.fill }} />
           ))}
         </div>
-        <div className="absolute -top-1 h-[18px] w-[3px] rounded-full bg-gray-900" style={{ left: `calc(${pct}% - 1.5px)` }} />
+        <div className="absolute -top-1 h-[18px] w-[3px] rounded-full bg-gray-900 transition-[left] duration-500 ease-out" style={{ left: `calc(${pct}% - 1.5px)` }} />
         {!compact && (
           <div className="flex text-[11px] text-gray-500 mt-1.5">
             {ZONES.map((z) => (

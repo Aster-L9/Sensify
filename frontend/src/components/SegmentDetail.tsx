@@ -7,6 +7,7 @@ import { STATE_STYLE, formatTick } from '@/lib/detection';
 import type { AlertItem, RunEvent, Segment, SegmentState, TelemetryPoint } from '@/lib/types';
 import { seriesFor } from '@/hooks/useRunData';
 import { TrustIndicator } from '@/components/detection/TrustIndicator';
+import { EquipmentState } from '@/components/detection/EquipmentState';
 import { AnomalyBandChart, type FlagWindow } from '@/components/detection/AnomalyBandChart';
 import { EventStrip } from '@/components/detection/EventStrip';
 
@@ -65,9 +66,8 @@ export function SegmentDetail({
         <Reading label="Flow" value={state?.flow_m3h} unit="m³/h" digits={0} />
         <Reading label="Temperature" value={state?.temperature_c} unit="°C" digits={1} />
         <Reading label="Anomaly score" value={state?.anomaly_score} unit="" digits={2} />
-        {state?.valve_open_pct !== null && state?.valve_open_pct !== undefined && <Reading label="Valve" value={state.valve_open_pct} unit="% open" digits={0} />}
-        {state?.pump_speed_pct !== null && state?.pump_speed_pct !== undefined && <Reading label="Pump" value={state.pump_speed_pct} unit="% speed" digits={0} />}
       </dl>
+      <EquipmentState state={state} segmentType={segment.segment_type} />
 
       <div>
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Can these readings be trusted?</h3>

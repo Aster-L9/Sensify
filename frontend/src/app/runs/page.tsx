@@ -55,9 +55,7 @@ export default function RunsPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Activity className="w-6 h-6 text-brand-500" aria-hidden /> Simulation runs
-          </h1>
+          <h1 className="text-[28px] leading-tight text-gray-900">Simulation runs</h1>
           <p className="text-sm text-gray-500 mt-1 max-w-2xl">
             Each run is simulated at launch and plays back at its chosen speed, so everyone watches it unfold together.
           </p>

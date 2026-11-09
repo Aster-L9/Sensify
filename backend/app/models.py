@@ -14,6 +14,7 @@ class UserRole(str, enum.Enum):
 
 class RunStatus(str, enum.Enum):
     active = "active"
+    paused = "paused"
     completed = "completed"
 
 
@@ -75,8 +76,6 @@ class Segment(Base):
     equipment = Column(String(30), nullable=True)  # inlet_control, pump, valve, delivery_control
     config_json = Column(Text, default="{}")
 
-    incidents = relationship("Incident", back_populates="segment")
-
 
 # ── Simulation Runs ────────────────────────────────────────────────────────────
 class Run(Base):
@@ -99,11 +98,14 @@ class Run(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     ended_at = Column(DateTime, nullable=True)
     model_version_id = Column(Integer, ForeignKey("model_versions.id"), nullable=True)
+    # Playback control (DH-02): wall-clock time the run was paused at, and the total seconds spent paused
+    # (or rewound by a reset). The reveal clock subtracts both, so stored rows never change.
+    paused_at = Column(DateTime, nullable=True)
+    paused_seconds = Column(Float, nullable=False, default=0.0, server_default="0")
 
     creator = relationship("User", back_populates="runs")
     target_segment = relationship("Segment")
     model_version = relationship("ModelVersion")
-    incidents = relationship("Incident", back_populates="run")
 
 
 # ── Telemetry (reported stream only) ───────────────────────────────────────────
@@ -225,7 +227,8 @@ class AnalysisResult(Base):
     model_version_id = Column(Integer, ForeignKey("model_versions.id"), nullable=True)
     anomaly_score = Column(Float, nullable=True)
     ml_flag = Column(Boolean, default=False)
-    trust_score = Column(Float, nullable=False, default=1.0)
+    # Null when the outcome is Insufficient. No default: an ORM bulk insert would turn None into it.
+    trust_score = Column(Float, nullable=True)
     trust_status = Column(String(20), nullable=False, default="Supported")
     trust_factors = Column(Text, default="[]")
     checks = Column(Text, default="{}")
@@ -252,21 +255,48 @@ class Alert(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-# ── Incidents (reserved for future use) ────────────────────────────────────────
+# ── Incidents and evaluation (Sprint 3) ────────────────────────────────────────
 class Incident(Base):
     __tablename__ = "incidents"
+    __table_args__ = (Index("ix_incidents_run", "run_id"),)
 
     id = Column(Integer, primary_key=True, index=True)
     run_id = Column(Integer, ForeignKey("runs.id"), nullable=False)
-    segment_id = Column(Integer, ForeignKey("segments.id"), nullable=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
-    incident_type = Column(String(50), nullable=False)
-    severity = Column(String(20), nullable=False)
-    status = Column(String(20), default=IncidentStatus.open.value)
-    description = Column(Text, nullable=True)
+    key = Column(String(40), unique=True, nullable=False)
+    model_version_id = Column(Integer, ForeignKey("model_versions.id"), nullable=True)
+    engine_version = Column(String(10))
+    start_tick = Column(Integer)
+    end_tick = Column(Integer)
+    detected_tick = Column(Integer)
+    classification = Column(String(30))
+    confidence = Column(Float)
+    segment_code = Column(String(10), nullable=True)
+    ot_layers = Column(Text, default="[]")
+    localisation_note = Column(Text)
+    severity = Column(String(10))
+    summary = Column(Text)
+    status = Column(String(15), default="investigating")
+    status_note = Column(Text, nullable=True)
+    resolved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+    payload = Column(Text, default="{}")
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-    run = relationship("Run", back_populates="incidents")
-    segment = relationship("Segment", back_populates="incidents")
+
+class EvaluationRun(Base):
+    __tablename__ = "evaluation_runs"
+
+    id = Column(Integer, primary_key=True)
+    version = Column(Integer, unique=True, nullable=False)
+    status = Column(String(10), default="running")  # running, ready, failed
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    model_version = Column(Integer, nullable=True)
+    engine_version = Column(String(10))
+    results = Column(Text, nullable=True)
+    error = Column(Text, nullable=True)
+    seconds = Column(Float, nullable=True)
+    shipped = Column(Boolean, default=False)
 
 
 # ── Activity Log ───────────────────────────────────────────────────────────────

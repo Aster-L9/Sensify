@@ -3,11 +3,12 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, Eye, MapPin } from 'lucide-react';
+import { AlertCircle, Eye } from 'lucide-react';
 import { getAlerts, getRunState, getRuns, getTopology } from '@/lib/api';
 import type { AlertItem, RunEvent, RunOut, RunState, Segment, SegmentStateName } from '@/lib/types';
 import { STATE_STYLE, formatDateTime } from '@/lib/detection';
 import { useRunData } from '@/hooks/useRunData';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePolling } from '@/hooks/usePolling';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/States';
 import { SegmentDetail } from '@/components/SegmentDetail';
@@ -21,6 +22,7 @@ const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer)
 const Polyline = dynamic(() => import('react-leaflet').then((m) => m.Polyline), { ssr: false });
 const CircleMarker = dynamic(() => import('react-leaflet').then((m) => m.CircleMarker), { ssr: false });
 const Tooltip = dynamic(() => import('react-leaflet').then((m) => m.Tooltip), { ssr: false });
+const MapFit = dynamic(() => import('@/components/detection/MapFit'), { ssr: false });
 
 export default function MapPage() {
   return (
@@ -31,13 +33,14 @@ export default function MapPage() {
 }
 
 function runLabel(r: RunOut): string {
-  return r.status === 'active'
-    ? `${r.name}, playing (${Math.round(r.progress * 100)} %)`
-    : `${r.name}, ${formatDateTime(r.started_at)}`;
+  if (r.status === 'active') return `${r.name}, playing (${Math.round(r.progress * 100)} %)`;
+  if (r.status === 'paused') return `${r.name}, paused (${Math.round(r.progress * 100)} %)`;
+  return `${r.name}, ${formatDateTime(r.started_at)}`;
 }
 
 function MapView() {
   const router = useRouter();
+  const { isAdmin } = useAuth();
   const search = useSearchParams();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [runs, setRuns] = useState<RunOut[]>([]);
@@ -65,7 +68,7 @@ function MapView() {
         if (requestedRun !== null && list.some((r) => r.id === requestedRun)) {
           setRunId(requestedRun);
         } else if (list.length) {
-          const fallback = (list.find((r) => r.status === 'active') ?? list[0]).id;
+          const fallback = (list.find((r) => r.status === 'active') ?? list.find((r) => r.status === 'paused') ?? list[0]).id;
           setRunId(fallback);
           if (requestedRun !== null) {
             // The requested run does not exist: say so and show the default run, live.
@@ -81,9 +84,9 @@ function MapView() {
 
   // Keep the run list's progress labels current and pick up runs launched meanwhile.
   const refreshRuns = useCallback(() => getRuns().then(setRuns).catch(() => undefined), []);
-  usePolling(refreshRuns, 5000, runs.some((r) => r.status === 'active'));
+  usePolling(refreshRuns, 5000, runs.some((r) => r.status !== 'completed'));
 
-  const { run, telemetry, anomalies, trust, events } = useRunData(runId);
+  const { run, telemetry, anomalies, trust, events, refresh } = useRunData(runId);
   const latest = run ? run.revealed_ticks - 1 : 0;
   const tick = live ? latest : Math.max(0, Math.min(cursor, latest));
 
@@ -139,9 +142,7 @@ function MapView() {
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <MapPin className="w-6 h-6 text-brand-500" aria-hidden /> Pipeline map
-          </h1>
+          <h1 className="text-[28px] leading-tight text-gray-900">Pipeline map</h1>
           <p className="text-sm text-gray-500 mt-1">The Dhahran to Jubail line, coloured by what each segment is doing at the chosen moment of a run.</p>
         </div>
         <label className="flex flex-col gap-1 text-sm text-gray-600 w-full lg:w-96">
@@ -161,8 +162,9 @@ function MapView() {
 
       {run && (
         <div className="glass-card p-4 space-y-3">
-          <RunPlayback status={run.status} revealedTicks={run.revealed_ticks} durationTicks={run.duration_ticks}
-            playbackSpeed={run.playback_speed} tick={tick} live={live} onTick={pickTick} onLive={goLive} />
+          <RunPlayback runId={run.id} status={run.status} revealedTicks={run.revealed_ticks} durationTicks={run.duration_ticks}
+            playbackSpeed={run.playback_speed} tick={tick} live={live} onTick={pickTick} onLive={goLive}
+            canControl={isAdmin} onControlled={() => { void refresh(); void refreshRuns(); }} />
           <StateLegend counts={counts} />
         </div>
       )}
@@ -170,6 +172,7 @@ function MapView() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
         <div className={`${selected ? 'lg:col-span-3' : 'lg:col-span-5'} glass-card overflow-hidden h-[460px] lg:h-[620px]`}>
           <MapContainer bounds={bounds} boundsOptions={{ padding: [40, 40] }} style={{ width: '100%', height: '100%' }} scrollWheelZoom>
+            <MapFit bounds={bounds} />
             <TileLayer
               attribution='&copy; <a href="https://www.esri.com">Esri</a>'
               url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"

@@ -1,10 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+/*
+  Sensify visual language (Sprint 3 refresh).
+  One family (Archivo) whose width axis carries the voice: headings are set wide like plant
+  nameplates, body text at normal width, every number in tabular figures. Surfaces are white
+  sheets on a cool canvas; hairlines are the only dividers. Motion is reserved for the live line
+  (product flowing) and for answering what the user just did.
+*/
 
 @layer base {
+  :root {
+    --canvas: #f1f2f6;
+    --ink: #191c33;
+    --rule: #e3e5ed;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
   * {
     box-sizing: border-box;
     margin: 0;
@@ -17,129 +32,143 @@
 
   body {
     @apply font-sans antialiased;
+    background: var(--canvas);
+    color: var(--ink);
     overflow-x: hidden;
+    font-feature-settings: 'tnum' 1, 'ss01' 1;
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    display: none;
+  h1, h2, h3, .display {
+    font-stretch: 118%;
+    letter-spacing: -0.012em;
   }
 
-  /* Hide scrollbar for IE, Edge and Firefox */
+  h1 {
+    font-weight: 650;
+  }
+
+  h2, h3 {
+    font-weight: 620;
+  }
+
+  /* Numbers line up in columns; the former monospace class now means "tabular figures". */
+  .font-mono, .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+    letter-spacing: 0;
+  }
+
+  /* Quiet scrollbars instead of none: long tables still show where they end. */
   * {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: #cdd0dc transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cdd0dc;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid #5b52c2;
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: rgba(113, 105, 213, 0.22);
   }
 }
 
 @layer components {
-  /* ── Glass Card ────────────────────────────────────────────────── */
+  /* ── Sheets ───────────────────────────────────────────────────── */
   .glass-card {
-    @apply bg-white border border-gray-200 rounded-2xl shadow-sm;
+    @apply bg-white rounded-sheet shadow-sheet;
   }
 
   .glass-card-hover {
-    @apply glass-card transition-all duration-300 hover:border-brand-500/30 hover:shadow-lg hover:shadow-brand-500/5;
+    @apply glass-card transition-[box-shadow,transform] duration-200 ease-out hover:shadow-lift;
   }
 
-  /* ── KPI Tile ─────────────────────────────────────────────────── */
-  .kpi-tile {
-    @apply glass-card p-5 flex flex-col gap-2 relative overflow-hidden;
+  .sheet-title {
+    @apply text-[15px] font-semibold text-gray-900;
+    font-stretch: 112%;
   }
 
-  .kpi-tile::before {
-    content: '';
-    @apply absolute top-0 left-0 w-full h-[2px];
-    background: linear-gradient(90deg, transparent, var(--kpi-accent, #7169d5), transparent);
+  .muted-link {
+    @apply text-sm font-medium text-brand-600 hover:text-brand-800 underline-offset-4 hover:underline;
   }
 
-  /* ── Status Colors ────────────────────────────────────────────── */
-  .status-operational {
-    @apply text-status-operational;
-  }
-  .status-warning {
-    @apply text-status-warning;
-  }
-  .status-critical {
-    @apply text-status-critical;
-  }
-  .status-offline {
-    @apply text-status-offline;
-  }
-  .status-maintenance {
-    @apply text-status-maintenance;
-  }
+  /* ── Status colours ───────────────────────────────────────────── */
+  .status-operational { @apply text-status-operational; }
+  .status-warning { @apply text-status-warning; }
+  .status-critical { @apply text-status-critical; }
+  .status-offline { @apply text-status-offline; }
+  .status-maintenance { @apply text-status-maintenance; }
 
-  .status-dot {
-    @apply w-2 h-2 rounded-full inline-block;
-  }
-  .status-dot-operational {
-    @apply status-dot bg-status-operational shadow-[0_0_8px_rgba(113,105,213,0.6)];
-  }
-  .status-dot-warning {
-    @apply status-dot bg-status-warning shadow-[0_0_8px_rgba(233,170,147,0.6)];
-  }
-  .status-dot-critical {
-    @apply status-dot bg-status-critical shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse;
-  }
-  .status-dot-offline {
-    @apply status-dot bg-status-offline;
-  }
+  .status-dot { @apply w-2 h-2 rounded-full inline-block; }
+  .status-dot-operational { @apply status-dot bg-status-operational; }
+  .status-dot-warning { @apply status-dot bg-status-warning; }
+  .status-dot-critical { @apply status-dot bg-status-critical; }
+  .status-dot-offline { @apply status-dot bg-status-offline; }
 
   /* ── Buttons ──────────────────────────────────────────────────── */
   .btn-primary {
-    @apply px-5 py-2.5 bg-brand-500 text-white font-semibold rounded-xl
-           hover:bg-brand-400 active:bg-brand-600
-           transition-all duration-200
-           shadow-sm shadow-brand-500/20
-           disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] text-sm font-semibold text-white
+           bg-brand-600 hover:bg-brand-700 active:scale-[0.98]
+           transition-[background-color,transform,box-shadow] duration-150 ease-out
+           shadow-[0_1px_0_rgba(255,255,255,0.18)_inset,0_1px_2px_rgba(47,43,105,0.3)]
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
   }
 
   .btn-secondary {
-    @apply px-5 py-2.5 bg-white text-gray-700 font-medium rounded-xl
-           border border-gray-200
-           hover:bg-gray-50 hover:border-gray-300
-           transition-all duration-200
-           disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] text-sm font-medium text-gray-800
+           bg-white shadow-sheet hover:bg-gray-50 active:scale-[0.98]
+           transition-[background-color,transform] duration-150 ease-out
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
   }
 
   .btn-ghost {
-    @apply px-4 py-2 text-gray-500 font-medium rounded-xl
-           hover:bg-gray-100 hover:text-gray-900
-           transition-all duration-200;
+    @apply inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-[10px] text-sm font-medium text-gray-600
+           hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-danger {
-    @apply px-5 py-2.5 bg-red-500/10 text-red-400 font-medium rounded-xl
-           border border-red-500/20
-           hover:bg-red-500/20 hover:border-red-500/40
-           transition-all duration-200;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-[10px] text-sm font-medium
+           text-red-700 bg-red-50 hover:bg-red-100 transition-colors duration-150;
   }
 
-  /* ── Input ────────────────────────────────────────────────────── */
+  /* ── Inputs ───────────────────────────────────────────────────── */
   .input-field {
-    @apply w-full px-4 py-3 bg-white border border-gray-200 rounded-xl
+    @apply w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-[10px] text-sm
            text-gray-900 placeholder-gray-400
-           focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-           transition-all duration-200;
+           focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10
+           transition-[border-color,box-shadow] duration-150;
   }
 
   .input-label {
-    @apply block text-sm font-medium text-gray-600 mb-1.5;
+    @apply block text-sm font-medium text-gray-700 mb-1.5;
   }
 
-  /* ── Sidebar ──────────────────────────────────────────────────── */
+  /* ── Navigation ───────────────────────────────────────────────── */
   .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-600
-           hover:bg-gray-100 hover:text-gray-900
-           transition-all duration-200 text-sm font-medium;
+    @apply relative z-10 flex items-center gap-3 px-3 py-2 rounded-[10px] text-sm font-medium text-gray-600
+           hover:text-gray-900 transition-colors duration-150;
   }
 
   .sidebar-link-active {
-    @apply sidebar-link bg-brand-500/10 text-brand-400 border-l-2 border-brand-500;
+    @apply sidebar-link text-gray-900;
   }
 
-  /* ── Table ────────────────────────────────────────────────────── */
+  /* ── Tables ───────────────────────────────────────────────────── */
   .data-table {
     @apply w-full text-sm;
   }
@@ -147,13 +176,13 @@
     @apply border-b border-gray-200;
   }
   .data-table th {
-    @apply px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider;
+    @apply px-4 py-2.5 text-left text-xs font-medium text-gray-500;
   }
   .data-table td {
     @apply px-4 py-3 text-gray-700;
   }
   .data-table tbody tr {
-    @apply border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150;
+    @apply border-b border-gray-100 last:border-0 hover:bg-gray-50/80 transition-colors duration-150;
   }
 
   /* ── Toast ────────────────────────────────────────────────────── */
@@ -161,50 +190,57 @@
     @apply fixed bottom-6 right-6 z-[100] animate-slide-in-up;
   }
   .toast-success {
-    @apply glass-card border-brand-500/30 px-5 py-3 flex items-center gap-3;
+    @apply glass-card shadow-lift px-5 py-3 flex items-center gap-3;
   }
   .toast-error {
-    @apply glass-card border-red-500/30 px-5 py-3 flex items-center gap-3;
+    @apply glass-card shadow-lift px-5 py-3 flex items-center gap-3;
   }
 
   /* ── Skeleton ─────────────────────────────────────────────────── */
   .skeleton {
-    @apply bg-gray-200 rounded-lg animate-pulse;
+    @apply rounded-lg;
+    background: linear-gradient(90deg, #eef0f5 0%, #f6f7fa 50%, #eef0f5 100%);
+    background-size: 200% 100%;
+    animation: skeleton-sheen 1.4s ease-in-out infinite;
   }
 
-  /* ── Badge ────────────────────────────────────────────────────── */
+  /* ── Badges ───────────────────────────────────────────────────── */
   .badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
   }
-  .badge-operational {
-    @apply badge bg-brand-500/10 text-brand-500 border border-brand-500/20;
+  .badge-operational { @apply badge bg-brand-50 text-brand-700; }
+  .badge-warning { @apply badge bg-amber-50 text-amber-800; }
+  .badge-critical { @apply badge bg-red-50 text-red-700; }
+  .badge-offline { @apply badge bg-gray-100 text-gray-600; }
+  .badge-active { @apply badge bg-brand-50 text-brand-700; }
+  .badge-completed { @apply badge bg-gray-100 text-gray-700; }
+  .badge-admin { @apply badge bg-brand-600 text-white; }
+  .badge-analyst { @apply badge bg-gray-100 text-gray-700; }
+
+  /* ── Segmented control / tabs ─────────────────────────────────── */
+  .segmented {
+    @apply relative inline-flex rounded-[10px] bg-gray-100 p-0.5;
   }
-  .badge-warning {
-    @apply badge bg-accent-peach/10 text-accent-peach border border-accent-peach/20;
+  .segmented-thumb {
+    @apply absolute top-0.5 bottom-0.5 rounded-[8px] bg-white shadow-sheet transition-[left,width] duration-300 ease-out;
   }
-  .badge-critical {
-    @apply badge bg-red-500/10 text-red-400 border border-red-500/20;
+  .segmented-option {
+    @apply relative z-10 px-3 py-1.5 text-sm font-medium text-gray-600 rounded-[8px] transition-colors duration-150;
   }
-  .badge-offline {
-    @apply badge bg-gray-500/10 text-gray-400 border border-gray-500/20;
-  }
-  .badge-active {
-    @apply badge bg-blue-500/10 text-blue-400 border border-blue-500/20;
-  }
-  .badge-completed {
-    @apply badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
-  }
-  .badge-admin {
-    @apply badge bg-purple-500/10 text-purple-400 border border-purple-500/20;
-  }
-  .badge-analyst {
-    @apply badge bg-cyan-500/10 text-cyan-400 border border-cyan-500/20;
+  .segmented-option[aria-selected='true'], .segmented-option[aria-pressed='true'] {
+    @apply text-gray-900;
   }
 }
 
-/* ── Leaflet Overrides ──────────────────────────────────────────── */
+@keyframes skeleton-sheen {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ── Leaflet ────────────────────────────────────────────────────── */
 .leaflet-container {
-  @apply bg-gray-100 rounded-2xl;
+  @apply bg-gray-100 rounded-sheet;
+  font-family: inherit;
 }
 .leaflet-control-zoom a {
   @apply !bg-white !text-gray-600 !border-gray-200;
@@ -213,28 +249,32 @@
   @apply !bg-gray-100;
 }
 .leaflet-popup-content-wrapper {
-  @apply !bg-white !text-gray-900 !rounded-xl !shadow-lg !border border-gray-200;
+  @apply !bg-white !text-gray-900 !rounded-xl !shadow-lift;
 }
 .leaflet-popup-tip {
   @apply !bg-white;
 }
 
-/* ── Chart Tooltip ──────────────────────────────────────────────── */
+/* ── Charts ─────────────────────────────────────────────────────── */
 .recharts-default-tooltip {
-  @apply !bg-white/95 !border-gray-200 !rounded-xl !shadow-lg backdrop-blur-sm;
+  @apply !bg-white/95 !border-0 !rounded-xl !shadow-lift backdrop-blur-sm;
 }
 .recharts-tooltip-label {
   @apply !text-gray-700 !font-medium;
 }
-/* ── Detection components ────────────────────────────────────────────── */
+.recharts-text {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── The live line (docs/sprint2/design.md §9.1) ─────────────────── */
 .schematic-seg:focus {
   outline: none;
 }
 .schematic-seg:focus-visible .schematic-hit {
-  stroke: #4b4aa3;
+  stroke: #4a42a6;
   stroke-width: 2.5;
 }
-/* One moment of motion: a segment that turns abnormal pulses twice, then settles. */
+/* A segment that turns abnormal pulses twice, then settles. */
 .schematic-halo {
   opacity: 0;
   animation: schematic-halo-pulse 1.4s ease-out 2;
@@ -243,15 +283,37 @@
   0% { opacity: 0.9; }
   100% { opacity: 0; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .schematic-halo {
-    animation: none;
-    opacity: 0.35;
-  }
+/* Product moving through the pipe while a run plays; it stops the moment the run is paused. */
+.schematic-flow {
+  stroke-dasharray: 2 14;
+  animation: schematic-flow 0.9s linear infinite;
 }
+@keyframes schematic-flow {
+  to { stroke-dashoffset: -16; }
+}
+/* On load the casing draws in from Dhahran to Jubail, then each station settles in order. */
+.schematic-draw {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: schematic-draw 0.9s var(--ease-out) forwards;
+}
+@keyframes schematic-draw {
+  to { stroke-dashoffset: 0; }
+}
+.schematic-node {
+  opacity: 0;
+  animation: schematic-node-in 0.45s var(--ease-out) forwards;
+}
+@keyframes schematic-node-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Playback slider ────────────────────────────────────────────── */
 .playback-range {
   -webkit-appearance: none;
   appearance: none;
@@ -269,8 +331,12 @@
   margin-top: -5px;
   border-radius: 9999px;
   background: #fff;
-  border: 3px solid #7169d5;
-  box-shadow: 0 1px 2px rgba(35, 40, 56, 0.25);
+  border: 3px solid #5b52c2;
+  box-shadow: 0 1px 3px rgba(25, 28, 51, 0.3);
+  transition: transform 0.15s var(--ease-out);
+}
+.playback-range:active::-webkit-slider-thumb {
+  transform: scale(1.2);
 }
 .playback-range::-moz-range-track {
   height: 6px;
@@ -281,10 +347,37 @@
   height: 12px;
   border-radius: 9999px;
   background: #fff;
-  border: 3px solid #7169d5;
+  border: 3px solid #5b52c2;
 }
 .playback-range:focus-visible {
-  outline: 2px solid #4b4aa3;
+  outline: 2px solid #4a42a6;
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/* Everything above is decoration in time; people who ask for less motion get none of it. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .schematic-flow {
+    display: none;
+  }
+  .schematic-halo {
+    opacity: 0.35;
+  }
+  .schematic-draw {
+    stroke-dashoffset: 0;
+  }
+  .schematic-node {
+    opacity: 1;
+  }
+}
+
+@keyframes toast-life {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
 }

@@ -1,5 +1,5 @@
 """
-Per-segment feature vectors for the normal-behaviour model.
+Per-segment feature vectors for the normal-behaviour model (spec §5.1).
 
 Every feature at tick t uses only ticks <= t, so scoring a whole run at once gives
 the same answers as scoring it live.

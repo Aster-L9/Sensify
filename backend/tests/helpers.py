@@ -22,7 +22,7 @@ def reported_from_rundata(data):
     """What the analysis may see of a simulated run: reported values and observable events only."""
     from app.analysis.frame import ObservableEvent, ReportedRun
 
-    events = [ObservableEvent(e.tick, e.segment, e.source, e.category, e.event_type, e.authorized, e.severity)
+    events = [ObservableEvent(e.tick, e.segment, e.source, e.category, e.event_type, e.authorized, e.severity, e.details or "")
               for e in data.events if e.observable]
     return ReportedRun(
         pressure=data.reported["pressure"].copy(), flow=data.reported["flow"].copy(),

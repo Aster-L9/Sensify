@@ -1,5 +1,5 @@
 """
-Model registry: versions in the database, artifacts in model_store/vN.
+Model registry (spec §6.4): versions in the database, artifacts in model_store/vN.
 
 Training runs in one background thread so the API stays responsive; the version row
 moves from `training` to `ready` or `failed` (with the error), and the active model
@@ -9,7 +9,7 @@ import json
 import os
 import threading
 from datetime import datetime
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from sqlalchemy.orm import Session
 
@@ -27,40 +27,93 @@ class TrainingInProgress(Exception):
     pass
 
 
+class ArtifactUnavailable(Exception):
+    """A version's model file cannot be found, neither where it was recorded nor in the model store."""
+
+
+def _backend_path(env_name: str, default: Path) -> Path:
+    """A folder from the environment; a relative value means relative to backend/, not to wherever
+    the server happened to be started, so the same .env works on any machine."""
+    value = os.getenv(env_name)
+    if not value:
+        return default
+    path = Path(value)
+    return path if path.is_absolute() else BACKEND_DIR / path
+
+
 def model_store_dir() -> Path:
-    return Path(os.getenv("MODEL_STORE_DIR") or BACKEND_DIR / "model_store")
+    return _backend_path("MODEL_STORE_DIR", BACKEND_DIR / "model_store")
 
 
 def dataset_dir() -> Path:
-    return Path(os.getenv("SENSIFY_DATASET_DIR") or BACKEND_DIR / "ml" / "data")
+    return _backend_path("SENSIFY_DATASET_DIR", BACKEND_DIR / "ml" / "data")
+
+
+def _is_absolute_anywhere(raw: str) -> bool:
+    """Absolute on any platform: a Windows drive or UNC path, or a rooted POSIX path. pathlib's native
+    check alone reads a drive path as relative on macOS and /Users/... as relative on Windows."""
+    win = PureWindowsPath(raw)
+    return bool(win.drive or win.root) or PurePosixPath(raw).is_absolute()
 
 
 def artifact_file(mv: ModelVersion) -> Path:
     """Where a version's model file lives. Paths are stored relative to the model store so the
-    project folder can be moved (or unzipped elsewhere); an old absolute path that no longer
-    exists falls back to the store's copy of that version."""
-    stored = Path(mv.artifact_path or "")
-    if mv.artifact_path:
-        if stored.is_absolute():
-            if stored.exists():
-                return stored
-        elif not PureWindowsPath(mv.artifact_path).is_absolute():
-            return model_store_dir() / stored
-    return model_store_dir() / f"v{mv.version}" / "model.joblib"
+    project folder can be moved (or unzipped elsewhere). A recorded path that is absolute (on any
+    platform) and does not exist here, or a relative one that escapes the store or is missing,
+    falls back to the store's copy of the same version, so version identity is kept."""
+    fallback = model_store_dir() / f"v{mv.version}" / "model.joblib"
+    raw = (mv.artifact_path or "").strip()
+    if not raw:
+        return fallback
+    if _is_absolute_anywhere(raw):
+        native = Path(raw)
+        return native if native.is_absolute() and native.is_file() else fallback
+    parts = PurePosixPath(PureWindowsPath(raw).as_posix()).parts  # tolerate backslash separators
+    if ".." in parts:
+        return fallback
+    candidate = model_store_dir().joinpath(*parts)
+    return candidate if candidate.is_file() or not fallback.is_file() else fallback
+
+
+def artifact_available(mv: ModelVersion) -> bool:
+    return artifact_file(mv).is_file()
+
+
+def store_relative_path(version: int) -> str:
+    """How every artifact path is stored: relative to the model store, with forward slashes, so the
+    same database row resolves on Windows, macOS and Linux wherever the project folder lives."""
+    return f"v{version}/model.joblib"
 
 
 def _stored_path(version_dir: Path) -> str:
-    file = Path(version_dir) / "model.joblib"
-    try:
-        return file.resolve().relative_to(model_store_dir().resolve()).as_posix()
-    except ValueError:
-        return str(file)
+    # Versions are always written to model_store/vN; the folder name carries the version.
+    return f"{Path(version_dir).name}/model.joblib"
+
+
+def normalise_artifact_paths(db: Session) -> list[int]:
+    """Rewrite older stored paths (absolute, or with backslashes) to the portable form when the store
+    holds that version's file. A path whose file is not in the store is left as it is, so nothing is lost.
+    Returns the versions that were rewritten."""
+    changed = []
+    for mv in db.query(ModelVersion).all():
+        portable = store_relative_path(mv.version)
+        if mv.artifact_path == portable or not (model_store_dir() / portable).is_file():
+            continue
+        mv.artifact_path = portable
+        changed.append(mv.version)
+    if changed:
+        db.commit()
+    return changed
 
 
 def load_model(mv: ModelVersion) -> DetectorModel:
     with _lock:
         if mv.id not in _cache:
-            model = DetectorModel.load(artifact_file(mv))
+            file = artifact_file(mv)
+            if not file.is_file():
+                raise ArtifactUnavailable(f"The model file for v{mv.version} is missing from the model store "
+                                          f"(expected v{mv.version}/model.joblib)")
+            model = DetectorModel.load(file)
             model.version = mv.version
             _cache[mv.id] = model
         return _cache[mv.id]
@@ -88,12 +141,35 @@ def _fill_from_dir(mv: ModelVersion, version_dir: Path) -> None:
     mv.params_json = json.dumps(manifest["params"])
     mv.dataset_json = json.dumps(doc["dataset"])
     mv.metrics_json = json.dumps({"metrics": doc["metrics"], "targets_check": doc["targets_check"],
-                                  "headline": manifest["headline"]})
+                                  "headline": manifest["headline"],
+                                  "validation": doc.get("validation") or _validation_sidecar(version_dir)})
     mv.targets_json = json.dumps(doc["targets"])
     mv.threshold = THRESHOLD
     mv.artifact_path = _stored_path(version_dir)
     mv.trained_seconds = manifest.get("trained_seconds")
     mv.status, mv.error = "ready", None
+
+
+def _validation_sidecar(version_dir: Path) -> dict | None:
+    """Validation outcomes computed after training for a version trained before they were recorded."""
+    file = Path(version_dir) / "validation.json"
+    return json.loads(file.read_text(encoding="utf-8")) if file.is_file() else None
+
+
+def backfill_validation_metrics(db: Session) -> None:
+    """Attach a sidecar validation.json to registered versions that lack validation outcomes."""
+    changed = False
+    for mv in db.query(ModelVersion).filter(ModelVersion.status == "ready").all():
+        stored = json.loads(mv.metrics_json or "{}")
+        if stored.get("validation"):
+            continue
+        sidecar = _validation_sidecar(model_store_dir() / f"v{mv.version}")
+        if sidecar:
+            stored["validation"] = sidecar
+            mv.metrics_json = json.dumps(stored)
+            changed = True
+    if changed:
+        db.commit()
 
 
 def activate(db: Session, version_id: int) -> ModelVersion:
@@ -102,6 +178,8 @@ def activate(db: Session, version_id: int) -> ModelVersion:
         raise LookupError("Model version not found")
     if mv.status != "ready":
         raise ValueError("Only a ready model can be activated")
+    if not artifact_available(mv):
+        raise ValueError(f"The model file for v{mv.version} is missing from the model store, so it cannot be activated")
     for other in db.query(ModelVersion).filter(ModelVersion.is_active.is_(True)).all():
         other.is_active = False
     mv.is_active = True
@@ -124,7 +202,7 @@ def register_from_dir(db: Session, version_dir: Path, user_id: int | None, activ
 
 
 def ensure_seed_model(db: Session) -> None:
-    """Register and activate a locally available v1 model on a fresh database."""
+    """Register and activate the shipped model (model_store/v1) on a fresh database."""
     if db.query(ModelVersion).first():
         return
     v1 = model_store_dir() / "v1"

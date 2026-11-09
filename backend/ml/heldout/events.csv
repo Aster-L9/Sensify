@@ -1,0 +1,258 @@
+event_id,timestamp,run_id,tick,segment_id,event_source,category,event_type,authorized,severity,details,observable
+EV-00001,2026-09-01T01:09:25,HO-0002,113,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 89% open,True
+EV-00002,2026-09-01T01:13:00,HO-0002,156,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00003,2026-09-01T01:19:30,HO-0002,234,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 93%,True
+EV-00004,2026-09-01T01:23:45,HO-0002,285,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00005,2026-09-01T03:22:10,HO-0004,266,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 86% open,True
+EV-00006,2026-09-01T03:24:50,HO-0004,298,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00007,2026-09-01T04:02:00,HO-0005,24,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 95%,True
+EV-00008,2026-09-01T04:05:35,HO-0005,67,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00009,2026-09-01T05:11:40,HO-0006,140,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 97%,True
+EV-00010,2026-09-01T05:15:20,HO-0006,184,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00011,2026-09-01T06:10:10,HO-0007,122,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 95%,True
+EV-00012,2026-09-01T06:11:10,HO-0007,134,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 91% open,True
+EV-00013,2026-09-01T06:13:40,HO-0007,164,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00014,2026-09-01T06:13:50,HO-0007,166,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00015,2026-09-01T08:09:50,HO-0009,118,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 94%,True
+EV-00016,2026-09-01T08:13:55,HO-0009,167,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00017,2026-09-01T09:03:20,HO-0010,40,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 90% open,True
+EV-00018,2026-09-01T09:05:25,HO-0010,65,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 93%,True
+EV-00019,2026-09-01T09:06:35,HO-0010,79,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00020,2026-09-01T09:09:40,HO-0010,116,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00021,2026-09-01T12:12:00,HO-0013,144,SEG-06,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Jubail Industrial Terminal,False
+EV-00022,2026-09-01T12:25:00,HO-0013,300,SEG-06,Physical Process,process,Leak isolated,n/a,low,The leak in Jubail Industrial Terminal is isolated,False
+EV-00023,2026-09-01T13:14:35,HO-0014,175,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 85% open,True
+EV-00024,2026-09-01T13:16:00,HO-0014,192,SEG-06,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Jubail Industrial Terminal,False
+EV-00025,2026-09-01T13:18:00,HO-0014,216,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00026,2026-09-01T14:02:00,HO-0015,24,SEG-01,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Dhahran Terminal,False
+EV-00027,2026-09-01T14:07:55,HO-0015,95,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 88% open,True
+EV-00028,2026-09-01T14:09:55,HO-0015,119,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00029,2026-09-01T14:19:00,HO-0015,228,SEG-01,Physical Process,process,Leak isolated,n/a,low,The leak in Dhahran Terminal is isolated,False
+EV-00030,2026-09-01T15:01:00,HO-0016,12,SEG-01,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Dhahran Terminal,False
+EV-00031,2026-09-01T16:02:00,HO-0017,24,SEG-04,Physical Process,process,Blockage forms,n/a,high,A partial restriction develops in Pipeline Corridor B,False
+EV-00032,2026-09-01T16:02:55,HO-0017,35,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 88% open,True
+EV-00033,2026-09-01T16:06:30,HO-0017,78,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00034,2026-09-01T16:15:00,HO-0017,180,SEG-04,Physical Process,process,Blockage cleared,n/a,low,The restriction in Pipeline Corridor B clears,False
+EV-00035,2026-09-01T17:02:00,HO-0018,24,SEG-02,Physical Process,process,Blockage forms,n/a,high,A partial restriction develops in Pipeline Corridor A,False
+EV-00036,2026-09-01T17:02:30,HO-0018,30,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 93% open,True
+EV-00037,2026-09-01T17:04:55,HO-0018,59,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00038,2026-09-01T18:02:00,HO-0019,24,SEG-04,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Pipeline Corridor B,False
+EV-00039,2026-09-01T18:16:00,HO-0019,192,SEG-04,Physical Process,process,Leak isolated,n/a,low,The leak in Pipeline Corridor B is isolated,False
+EV-00040,2026-09-01T19:12:00,HO-0020,144,SEG-06,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Jubail Industrial Terminal,False
+EV-00041,2026-09-01T19:21:20,HO-0020,256,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 97%,True
+EV-00042,2026-09-01T19:22:55,HO-0020,275,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 90% open,True
+EV-00043,2026-09-01T19:25:50,HO-0020,310,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00044,2026-09-01T19:26:45,HO-0020,321,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00045,2026-09-01T20:01:00,HO-0021,12,SEG-06,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Jubail Industrial Terminal,False
+EV-00046,2026-09-01T20:07:25,HO-0021,89,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 90% open,True
+EV-00047,2026-09-01T20:09:25,HO-0021,113,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00048,2026-09-01T20:15:00,HO-0021,180,SEG-06,Physical Process,process,Leak isolated,n/a,low,The leak in Jubail Industrial Terminal is isolated,False
+EV-00049,2026-09-01T21:03:00,HO-0022,36,SEG-05,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Valve Station V-12,False
+EV-00050,2026-09-01T22:04:00,HO-0023,48,SEG-01,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Dhahran Terminal,False
+EV-00051,2026-09-01T22:09:30,HO-0023,114,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 89% open,True
+EV-00052,2026-09-01T22:12:40,HO-0023,152,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00053,2026-09-01T22:24:00,HO-0023,288,SEG-01,Physical Process,process,Leak isolated,n/a,low,The leak in Dhahran Terminal is isolated,False
+EV-00054,2026-09-01T23:02:00,HO-0024,24,SEG-05,Physical Process,process,Blockage forms,n/a,high,A partial restriction develops in Valve Station V-12,False
+EV-00055,2026-09-02T00:04:00,HO-0025,48,SEG-05,Pressure Sensor,device,Sensor fault begins,n/a,high,The pressure sensor at SEG-05 starts misreporting (drift),False
+EV-00056,2026-09-02T00:04:10,HO-0025,50,SEG-05,Pressure Sensor,device,Sensor calibration drift,n/a,medium,Device diagnostic from the pressure sensor at SEG-05,True
+EV-00057,2026-09-02T01:02:00,HO-0026,24,SEG-02,Flow Sensor,device,Sensor fault begins,n/a,high,The flow sensor at SEG-02 starts misreporting (drift),False
+EV-00058,2026-09-02T01:16:50,HO-0026,202,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 96%,True
+EV-00059,2026-09-02T01:21:45,HO-0026,261,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00060,2026-09-02T02:01:00,HO-0027,12,SEG-04,Pressure Sensor,device,Sensor fault begins,n/a,high,The pressure sensor at SEG-04 starts misreporting (drift),False
+EV-00061,2026-09-02T02:01:10,HO-0027,14,SEG-04,Pressure Sensor,device,Sensor calibration drift,n/a,medium,Device diagnostic from the pressure sensor at SEG-04,True
+EV-00062,2026-09-02T03:02:00,HO-0028,24,SEG-01,Pressure Sensor,device,Sensor fault begins,n/a,high,The pressure sensor at SEG-01 starts misreporting (drift),False
+EV-00063,2026-09-02T04:02:45,HO-0029,33,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 93% open,True
+EV-00064,2026-09-02T04:04:00,HO-0029,48,SEG-05,Pressure Sensor,device,Sensor fault begins,n/a,high,The pressure sensor at SEG-05 starts misreporting (stuck),False
+EV-00065,2026-09-02T04:04:10,HO-0029,50,SEG-05,Pressure Sensor,device,Sensor reading frozen,n/a,medium,Device diagnostic from the pressure sensor at SEG-05,True
+EV-00066,2026-09-02T04:04:50,HO-0029,58,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00067,2026-09-02T05:04:00,HO-0030,48,SEG-05,Flow Sensor,device,Sensor fault begins,n/a,high,The flow sensor at SEG-05 starts misreporting (erratic),False
+EV-00068,2026-09-02T06:04:00,HO-0031,48,SEG-05,Flow Sensor,device,Sensor fault begins,n/a,high,The flow sensor at SEG-05 starts misreporting (stuck),False
+EV-00069,2026-09-02T06:04:10,HO-0031,50,SEG-05,Flow Sensor,device,Sensor reading frozen,n/a,medium,Device diagnostic from the flow sensor at SEG-05,True
+EV-00070,2026-09-02T07:08:55,HO-0032,107,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 89% open,True
+EV-00071,2026-09-02T07:09:05,HO-0032,109,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 94%,True
+EV-00072,2026-09-02T07:11:30,HO-0032,138,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00073,2026-09-02T07:12:00,HO-0032,144,SEG-05,Flow Sensor,device,Sensor fault begins,n/a,high,The flow sensor at SEG-05 starts misreporting (erratic),False
+EV-00074,2026-09-02T07:12:10,HO-0032,146,SEG-05,Flow Sensor,device,Erratic sensor reading,n/a,medium,Device diagnostic from the flow sensor at SEG-05,True
+EV-00075,2026-09-02T07:13:05,HO-0032,157,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00076,2026-09-02T08:04:25,HO-0033,53,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 95%,True
+EV-00077,2026-09-02T08:07:45,HO-0033,93,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00078,2026-09-02T08:12:00,HO-0033,144,SEG-06,Flow Sensor,device,Sensor fault begins,n/a,high,The flow sensor at SEG-06 starts misreporting (erratic),False
+EV-00079,2026-09-02T08:12:10,HO-0033,146,SEG-06,Flow Sensor,device,Erratic sensor reading,n/a,medium,Device diagnostic from the flow sensor at SEG-06,True
+EV-00080,2026-09-02T09:04:00,HO-0034,48,SEG-03,Pressure Sensor,device,Sensor fault begins,n/a,high,The pressure sensor at SEG-03 starts misreporting (erratic),False
+EV-00081,2026-09-02T09:07:45,HO-0034,93,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 95%,True
+EV-00082,2026-09-02T09:11:30,HO-0034,138,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 88% open,True
+EV-00083,2026-09-02T09:12:25,HO-0034,149,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00084,2026-09-02T09:15:25,HO-0034,185,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00085,2026-09-02T10:02:00,HO-0035,24,SEG-06,Flow Sensor,device,Sensor fault begins,n/a,high,The flow sensor at SEG-06 starts misreporting (stuck),False
+EV-00086,2026-09-02T10:03:25,HO-0035,41,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 92% open,True
+EV-00087,2026-09-02T10:05:35,HO-0035,67,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00088,2026-09-02T11:03:00,HO-0036,36,SEG-02,Pressure Sensor,device,Sensor fault begins,n/a,high,The pressure sensor at SEG-02 starts misreporting (erratic),False
+EV-00089,2026-09-02T11:03:10,HO-0036,38,SEG-02,Pressure Sensor,device,Erratic sensor reading,n/a,medium,Device diagnostic from the pressure sensor at SEG-02,True
+EV-00090,2026-09-02T11:11:25,HO-0036,137,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 88% open,True
+EV-00091,2026-09-02T11:13:30,HO-0036,162,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00092,2026-09-02T12:03:00,HO-0037,36,SEG-06,Reporting Source,security,False offset injected,n/a,high,A false offset is added to the reported pressure at SEG-06,False
+EV-00093,2026-09-02T13:03:05,HO-0038,37,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 93%,True
+EV-00094,2026-09-02T13:04:00,HO-0038,48,SEG-06,Reporting Source,security,False offset injected,n/a,high,A false offset is added to the reported pressure at SEG-06,False
+EV-00095,2026-09-02T13:06:50,HO-0038,82,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00096,2026-09-02T14:04:00,HO-0039,48,SEG-02,Reporting Source,security,False offset injected,n/a,high,A false offset is added to the reported pressure at SEG-02,False
+EV-00097,2026-09-02T15:01:00,HO-0040,12,SEG-05,Reporting Source,security,False offset injected,n/a,high,A false offset is added to the reported pressure at SEG-05,False
+EV-00098,2026-09-02T15:04:10,HO-0040,50,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 88% open,True
+EV-00099,2026-09-02T15:06:25,HO-0040,77,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00100,2026-09-02T16:10:00,HO-0041,120,SEG-06,Reporting Source,security,Reporting configuration change,unknown,medium,Telemetry reporting configuration changed on the RTU at SEG-06,True
+EV-00101,2026-09-02T16:10:00,HO-0041,120,SEG-06,Reporting Source,security,False offset injected,n/a,high,A false offset is added to the reported pressure at SEG-06,False
+EV-00102,2026-09-02T17:01:00,HO-0042,12,SEG-03,Reporting Source,security,Reporting configuration change,unknown,medium,Telemetry reporting configuration changed on the RTU at SEG-03,True
+EV-00103,2026-09-02T17:01:00,HO-0042,12,SEG-03,Physical Process,process,Covert process change begins,n/a,high,The process at Pump Station Alpha is changed without a logged command,False
+EV-00104,2026-09-02T17:01:00,HO-0042,12,SEG-03,Reporting Source,security,Replay of recorded telemetry begins,n/a,critical,Recorded normal readings are replayed for SEG-03,False
+EV-00105,2026-09-02T18:03:00,HO-0043,36,SEG-06,Reporting Source,security,Reporting configuration change,unknown,medium,Telemetry reporting configuration changed on the RTU at SEG-06,True
+EV-00106,2026-09-02T18:03:00,HO-0043,36,SEG-06,Physical Process,process,Covert process change begins,n/a,high,The process at Jubail Industrial Terminal is changed without a logged command,False
+EV-00107,2026-09-02T18:03:00,HO-0043,36,SEG-06,Reporting Source,security,Replay of recorded telemetry begins,n/a,critical,Recorded normal readings are replayed for SEG-06,False
+EV-00108,2026-09-02T18:09:00,HO-0043,108,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 89% open,True
+EV-00109,2026-09-02T18:12:10,HO-0043,146,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00110,2026-09-02T19:04:00,HO-0044,48,SEG-01,Reporting Source,security,Reporting configuration change,unknown,medium,Telemetry reporting configuration changed on the RTU at SEG-01,True
+EV-00111,2026-09-02T19:04:00,HO-0044,48,SEG-01,Physical Process,process,Covert process change begins,n/a,high,The process at Dhahran Terminal is changed without a logged command,False
+EV-00112,2026-09-02T19:04:00,HO-0044,48,SEG-01,Reporting Source,security,Replay of recorded telemetry begins,n/a,critical,Recorded normal readings are replayed for SEG-01,False
+EV-00113,2026-09-02T19:15:55,HO-0044,191,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 88% open,True
+EV-00114,2026-09-02T19:18:55,HO-0044,227,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00115,2026-09-02T19:19:05,HO-0044,229,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 98%,True
+EV-00116,2026-09-02T19:23:05,HO-0044,277,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00117,2026-09-02T20:02:00,HO-0045,24,SEG-05,Reporting Source,security,Reporting configuration change,unknown,medium,Telemetry reporting configuration changed on the RTU at SEG-05,True
+EV-00118,2026-09-02T20:02:00,HO-0045,24,SEG-05,Reporting Source,security,False offset injected,n/a,high,A false offset is added to the reported pressure at SEG-05,False
+EV-00119,2026-09-02T21:02:00,HO-0046,24,SEG-01,Reporting Source,security,Reporting configuration change,unknown,medium,Telemetry reporting configuration changed on the RTU at SEG-01,True
+EV-00120,2026-09-02T21:02:00,HO-0046,24,SEG-01,Physical Process,process,Covert process change begins,n/a,high,The process at Dhahran Terminal is changed without a logged command,False
+EV-00121,2026-09-02T21:02:00,HO-0046,24,SEG-01,Reporting Source,security,Replay of recorded telemetry begins,n/a,critical,Recorded normal readings are replayed for SEG-01,False
+EV-00122,2026-09-02T21:21:25,HO-0046,257,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 92% open,True
+EV-00123,2026-09-02T21:23:50,HO-0046,286,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00124,2026-09-02T22:10:00,HO-0047,120,SEG-01,Reporting Source,security,Reporting configuration change,unknown,medium,Telemetry reporting configuration changed on the RTU at SEG-01,True
+EV-00125,2026-09-02T22:10:00,HO-0047,120,SEG-01,Physical Process,process,Covert process change begins,n/a,high,The process at Dhahran Terminal is changed without a logged command,False
+EV-00126,2026-09-02T22:10:00,HO-0047,120,SEG-01,Reporting Source,security,Replay of recorded telemetry begins,n/a,critical,Recorded normal readings are replayed for SEG-01,False
+EV-00127,2026-09-02T22:19:50,HO-0047,238,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 97%,True
+EV-00128,2026-09-02T22:23:10,HO-0047,278,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00129,2026-09-02T23:01:00,HO-0048,12,SEG-01,Reporting Source,security,Reporting configuration change,unknown,medium,Telemetry reporting configuration changed on the RTU at SEG-01,True
+EV-00130,2026-09-02T23:01:00,HO-0048,12,SEG-01,Physical Process,process,Covert process change begins,n/a,high,The process at Dhahran Terminal is changed without a logged command,False
+EV-00131,2026-09-02T23:01:00,HO-0048,12,SEG-01,Reporting Source,security,Replay of recorded telemetry begins,n/a,critical,Recorded normal readings are replayed for SEG-01,False
+EV-00132,2026-09-03T00:01:00,HO-0049,12,SEG-03,Control Layer,control,Pump trip command issued,no,critical,Command requests pump P-3 to stop,True
+EV-00133,2026-09-03T00:01:00,HO-0049,12,SEG-03,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive pump P-3 away from its setpoint,False
+EV-00134,2026-09-03T00:01:05,HO-0049,13,SEG-03,Pump P-3,control,Pump stopped,no,critical,Pump P-3 stops,True
+EV-00135,2026-09-03T00:18:00,HO-0049,216,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 to 100% speed,True
+EV-00136,2026-09-03T01:14:05,HO-0050,169,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 86% open,True
+EV-00137,2026-09-03T01:16:00,HO-0050,192,SEG-05,Control Layer,control,Valve command issued,no,high,Command requests valve V-12 to move to 84% open,True
+EV-00138,2026-09-03T01:16:00,HO-0050,192,SEG-05,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive valve V-12 away from its setpoint,False
+EV-00139,2026-09-03T01:16:05,HO-0050,193,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 94% open,True
+EV-00140,2026-09-03T01:16:15,HO-0050,195,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 89% open,True
+EV-00141,2026-09-03T01:16:25,HO-0050,197,SEG-05,Valve V-12,control,Valve state changed,no,critical,Valve moves to 84% open,True
+EV-00142,2026-09-03T01:17:20,HO-0050,208,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00143,2026-09-03T02:03:00,HO-0051,36,SEG-03,Control Layer,control,Pump trip command issued,no,critical,Command requests pump P-3 to stop,True
+EV-00144,2026-09-03T02:03:00,HO-0051,36,SEG-03,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive pump P-3 away from its setpoint,False
+EV-00145,2026-09-03T02:03:05,HO-0051,37,SEG-03,Pump P-3,control,Pump stopped,no,critical,Pump P-3 stops,True
+EV-00146,2026-09-03T02:14:25,HO-0051,173,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 94%,True
+EV-00147,2026-09-03T02:16:00,HO-0051,192,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 to 100% speed,True
+EV-00148,2026-09-03T02:17:30,HO-0051,210,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00149,2026-09-03T03:04:00,HO-0052,48,SEG-05,Control Layer,control,Valve command issued,no,high,Command requests valve V-12 to move to 86% open,True
+EV-00150,2026-09-03T03:04:00,HO-0052,48,SEG-05,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive valve V-12 away from its setpoint,False
+EV-00151,2026-09-03T03:04:05,HO-0052,49,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 95% open,True
+EV-00152,2026-09-03T03:04:15,HO-0052,51,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 90% open,True
+EV-00153,2026-09-03T03:04:25,HO-0052,53,SEG-05,Valve V-12,control,Valve state changed,no,critical,Valve moves to 86% open,True
+EV-00154,2026-09-03T04:02:30,HO-0053,30,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 91% open,True
+EV-00155,2026-09-03T04:03:00,HO-0053,36,SEG-05,Security Monitor,security,Command from unregistered workstation,no,high,Engineering command originated from an unregistered workstation (10.0.4.23),True
+EV-00156,2026-09-03T04:03:00,HO-0053,36,SEG-05,Control Layer,control,Valve command issued,no,high,Command requests valve V-12 to move to 82% open,True
+EV-00157,2026-09-03T04:03:00,HO-0053,36,SEG-05,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive valve V-12 away from its setpoint,False
+EV-00158,2026-09-03T04:03:05,HO-0053,37,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 94% open,True
+EV-00159,2026-09-03T04:03:15,HO-0053,39,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 88% open,True
+EV-00160,2026-09-03T04:03:25,HO-0053,41,SEG-05,Valve V-12,control,Valve state changed,no,critical,Valve moves to 82% open,True
+EV-00161,2026-09-03T04:05:40,HO-0053,68,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00162,2026-09-03T04:18:00,HO-0053,216,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00163,2026-09-03T05:01:00,HO-0054,12,SEG-05,Security Monitor,security,Command from unregistered workstation,no,high,Engineering command originated from an unregistered workstation (10.0.4.23),True
+EV-00164,2026-09-03T05:01:00,HO-0054,12,SEG-05,Control Layer,control,Valve command issued,no,high,Command requests valve V-12 to move to 92% open,True
+EV-00165,2026-09-03T05:01:00,HO-0054,12,SEG-05,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive valve V-12 away from its setpoint,False
+EV-00166,2026-09-03T05:01:05,HO-0054,13,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 97% open,True
+EV-00167,2026-09-03T05:01:15,HO-0054,15,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 94% open,True
+EV-00168,2026-09-03T05:01:25,HO-0054,17,SEG-05,Valve V-12,control,Valve state changed,no,critical,Valve moves to 92% open,True
+EV-00169,2026-09-03T06:03:00,HO-0055,36,SEG-03,Security Monitor,security,Command from unregistered workstation,no,high,Engineering command originated from an unregistered workstation (10.0.4.23),True
+EV-00170,2026-09-03T06:03:00,HO-0055,36,SEG-03,Control Layer,control,Pump command issued,no,high,Command requests pump P-3 speed 88%,True
+EV-00171,2026-09-03T06:03:00,HO-0055,36,SEG-03,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive pump P-3 away from its setpoint,False
+EV-00172,2026-09-03T06:03:05,HO-0055,37,SEG-03,Pump P-3,control,Pump speed changed,no,high,Pump speed falls to 88%,True
+EV-00173,2026-09-03T06:19:00,HO-0055,228,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 to 100% speed,True
+EV-00174,2026-09-03T07:02:00,HO-0056,24,SEG-05,Security Monitor,security,Command from unregistered workstation,no,high,Engineering command originated from an unregistered workstation (10.0.4.23),True
+EV-00175,2026-09-03T07:02:00,HO-0056,24,SEG-05,Control Layer,control,Valve command issued,no,high,Command requests valve V-12 to move to 79% open,True
+EV-00176,2026-09-03T07:02:00,HO-0056,24,SEG-05,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive valve V-12 away from its setpoint,False
+EV-00177,2026-09-03T07:02:05,HO-0056,25,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 93% open,True
+EV-00178,2026-09-03T07:02:15,HO-0056,27,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 86% open,True
+EV-00179,2026-09-03T07:02:25,HO-0056,29,SEG-05,Valve V-12,control,Valve state changed,no,critical,Valve moves to 79% open,True
+EV-00180,2026-09-03T07:15:25,HO-0056,185,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 95% open,True
+EV-00181,2026-09-03T07:18:55,HO-0056,227,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00182,2026-09-03T08:03:00,HO-0057,36,SEG-03,Security Monitor,security,Command from unregistered workstation,no,high,Engineering command originated from an unregistered workstation (10.0.4.23),True
+EV-00183,2026-09-03T08:03:00,HO-0057,36,SEG-03,Control Layer,control,Pump trip command issued,no,critical,Command requests pump P-3 to stop,True
+EV-00184,2026-09-03T08:03:00,HO-0057,36,SEG-03,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive pump P-3 away from its setpoint,False
+EV-00185,2026-09-03T08:03:05,HO-0057,37,SEG-03,Pump P-3,control,Pump stopped,no,critical,Pump P-3 stops,True
+EV-00186,2026-09-03T08:15:00,HO-0057,180,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 to 100% speed,True
+EV-00187,2026-09-03T09:09:35,HO-0058,115,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 97%,True
+EV-00188,2026-09-03T09:12:00,HO-0058,144,SEG-03,Security Monitor,security,Command from unregistered workstation,no,high,Engineering command originated from an unregistered workstation (10.0.4.23),True
+EV-00189,2026-09-03T09:12:00,HO-0058,144,SEG-03,Control Layer,control,Pump command issued,no,high,Command requests pump P-3 speed 93%,True
+EV-00190,2026-09-03T09:12:00,HO-0058,144,SEG-03,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive pump P-3 away from its setpoint,False
+EV-00191,2026-09-03T09:12:05,HO-0058,145,SEG-03,Pump P-3,control,Pump speed changed,no,high,Pump speed falls to 93%,True
+EV-00192,2026-09-03T09:13:15,HO-0058,159,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00193,2026-09-03T09:21:45,HO-0058,261,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 86% open,True
+EV-00194,2026-09-03T09:25:15,HO-0058,303,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00195,2026-09-03T10:03:00,HO-0059,36,SEG-05,Security Monitor,security,Command from unregistered workstation,no,high,Engineering command originated from an unregistered workstation (10.0.4.23),True
+EV-00196,2026-09-03T10:03:00,HO-0059,36,SEG-05,Control Layer,control,Valve command issued,no,high,Command requests valve V-12 to move to 84% open,True
+EV-00197,2026-09-03T10:03:00,HO-0059,36,SEG-05,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive valve V-12 away from its setpoint,False
+EV-00198,2026-09-03T10:03:05,HO-0059,37,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 95% open,True
+EV-00199,2026-09-03T10:03:15,HO-0059,39,SEG-05,Valve V-12,control,Valve state changed,no,high,Valve moves to 90% open,True
+EV-00200,2026-09-03T10:03:25,HO-0059,41,SEG-05,Valve V-12,control,Valve state changed,no,critical,Valve moves to 84% open,True
+EV-00201,2026-09-03T10:21:00,HO-0059,252,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00202,2026-09-03T11:02:00,HO-0060,24,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 97%,True
+EV-00203,2026-09-03T11:06:35,HO-0060,79,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00204,2026-09-03T11:10:00,HO-0060,120,SEG-03,Security Monitor,security,Command from unregistered workstation,no,high,Engineering command originated from an unregistered workstation (10.0.4.23),True
+EV-00205,2026-09-03T11:10:00,HO-0060,120,SEG-03,Control Layer,control,Pump command issued,no,high,Command requests pump P-3 speed 96%,True
+EV-00206,2026-09-03T11:10:00,HO-0060,120,SEG-03,Control Layer,control,Unauthorized control begins,n/a,critical,Unauthorized commands drive pump P-3 away from its setpoint,False
+EV-00207,2026-09-03T11:10:05,HO-0060,121,SEG-03,Pump P-3,control,Pump speed changed,no,high,Pump speed falls to 96%,True
+EV-00208,2026-09-03T12:13:50,HO-0061,166,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 95% open,True
+EV-00209,2026-09-03T12:14:00,HO-0061,168,SEG-01,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Dhahran Terminal,False
+EV-00210,2026-09-03T12:14:00,HO-0061,168,SEG-01,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-01 are held at normal-looking levels,False
+EV-00211,2026-09-03T12:17:30,HO-0061,210,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00212,2026-09-03T12:26:00,HO-0061,312,SEG-01,Physical Process,process,Leak isolated,n/a,low,The leak in Dhahran Terminal is isolated,False
+EV-00213,2026-09-03T13:03:00,HO-0062,36,SEG-06,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Jubail Industrial Terminal,False
+EV-00214,2026-09-03T13:03:00,HO-0062,36,SEG-06,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-06 are held at normal-looking levels,False
+EV-00215,2026-09-03T13:12:30,HO-0062,150,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 97%,True
+EV-00216,2026-09-03T13:17:10,HO-0062,206,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00217,2026-09-03T14:04:00,HO-0063,48,SEG-04,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Pipeline Corridor B,False
+EV-00218,2026-09-03T14:04:00,HO-0063,48,SEG-04,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-04 are held at normal-looking levels,False
+EV-00219,2026-09-03T14:12:15,HO-0063,147,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 87% open,True
+EV-00220,2026-09-03T14:14:00,HO-0063,168,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 98%,True
+EV-00221,2026-09-03T14:15:05,HO-0063,181,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00222,2026-09-03T14:17:00,HO-0063,204,SEG-04,Physical Process,process,Leak isolated,n/a,low,The leak in Pipeline Corridor B is isolated,False
+EV-00223,2026-09-03T14:17:45,HO-0063,213,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00224,2026-09-03T15:02:00,HO-0064,24,SEG-04,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Pipeline Corridor B,False
+EV-00225,2026-09-03T15:02:00,HO-0064,24,SEG-04,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-04 are held at normal-looking levels,False
+EV-00226,2026-09-03T16:10:00,HO-0065,120,SEG-04,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Pipeline Corridor B,False
+EV-00227,2026-09-03T16:10:00,HO-0065,120,SEG-04,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-04 are held at normal-looking levels,False
+EV-00228,2026-09-03T16:14:15,HO-0065,171,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 98%,True
+EV-00229,2026-09-03T16:18:45,HO-0065,225,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00230,2026-09-03T16:27:00,HO-0065,324,SEG-04,Physical Process,process,Leak isolated,n/a,low,The leak in Pipeline Corridor B is isolated,False
+EV-00231,2026-09-03T17:10:00,HO-0066,120,SEG-06,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Jubail Industrial Terminal,False
+EV-00232,2026-09-03T17:10:00,HO-0066,120,SEG-06,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-06 are held at normal-looking levels,False
+EV-00233,2026-09-03T18:03:00,HO-0067,36,SEG-02,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Pipeline Corridor A,False
+EV-00234,2026-09-03T18:03:00,HO-0067,36,SEG-02,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-02 are held at normal-looking levels,False
+EV-00235,2026-09-03T18:17:25,HO-0067,209,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 90% open,True
+EV-00236,2026-09-03T18:20:00,HO-0067,240,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00237,2026-09-03T18:20:00,HO-0067,240,SEG-02,Physical Process,process,Leak isolated,n/a,low,The leak in Pipeline Corridor A is isolated,False
+EV-00238,2026-09-03T19:02:00,HO-0068,24,SEG-03,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Pump Station Alpha,False
+EV-00239,2026-09-03T19:02:00,HO-0068,24,SEG-03,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-03 are held at normal-looking levels,False
+EV-00240,2026-09-03T20:02:00,HO-0069,24,SEG-06,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Jubail Industrial Terminal,False
+EV-00241,2026-09-03T20:02:00,HO-0069,24,SEG-06,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-06 are held at normal-looking levels,False
+EV-00242,2026-09-03T20:10:20,HO-0069,124,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 97%,True
+EV-00243,2026-09-03T20:13:55,HO-0069,167,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True
+EV-00244,2026-09-03T20:14:05,HO-0069,169,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 86% open,True
+EV-00245,2026-09-03T20:17:50,HO-0069,214,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00246,2026-09-03T20:19:00,HO-0069,228,SEG-06,Physical Process,process,Leak isolated,n/a,low,The leak in Jubail Industrial Terminal is isolated,False
+EV-00247,2026-09-03T21:02:00,HO-0070,24,SEG-06,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Jubail Industrial Terminal,False
+EV-00248,2026-09-03T21:02:00,HO-0070,24,SEG-06,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-06 are held at normal-looking levels,False
+EV-00249,2026-09-03T22:04:00,HO-0071,48,SEG-06,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Jubail Industrial Terminal,False
+EV-00250,2026-09-03T22:04:00,HO-0071,48,SEG-06,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-06 are held at normal-looking levels,False
+EV-00251,2026-09-03T22:19:00,HO-0071,228,SEG-06,Physical Process,process,Leak isolated,n/a,low,The leak in Jubail Industrial Terminal is isolated,False
+EV-00252,2026-09-03T23:02:00,HO-0072,24,SEG-04,Physical Process,process,Leak begins,n/a,high,Product starts escaping in Pipeline Corridor B,False
+EV-00253,2026-09-03T23:02:00,HO-0072,24,SEG-04,Reporting Source,security,Reporting held near normal,n/a,critical,Reported values at SEG-04 are held at normal-looking levels,False
+EV-00254,2026-09-03T23:04:15,HO-0072,51,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator sets valve V-12 to 93% open,True
+EV-00255,2026-09-03T23:08:05,HO-0072,97,SEG-05,Control Layer,control,Valve command issued,yes,low,Operator restores valve V-12 to 100% open,True
+EV-00256,2026-09-03T23:15:20,HO-0072,184,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator sets pump P-3 speed to 94%,True
+EV-00257,2026-09-03T23:18:25,HO-0072,221,SEG-03,Control Layer,control,Pump command issued,yes,low,Operator restores pump P-3 speed to 100%,True

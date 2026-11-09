@@ -51,14 +51,14 @@ def test_rebuilds_sprint1_db_and_keeps_users(tmp_path):
     assert migrate_if_needed(eng) is True
     assert (tmp_path / "old.db.sprint1.bak").exists()
     with eng.connect() as c:
-        assert c.execute(text("select value from meta where key='schema_version'")).scalar() == "2"
+        assert c.execute(text("select value from meta where key='schema_version'")).scalar() == "4"
         assert c.execute(text("select count(*) from users")).scalar() == 3
         assert c.execute(text("select count(*) from runs")).scalar() == 0
         assert c.execute(text("select hashed_password from users where username='extra'")).scalar() == "h3"
     eng.dispose()
 
 
-def test_migrate_is_noop_on_v2(tmp_path):
+def test_migrate_is_noop_on_current_version(tmp_path):
     eng = create_engine(f"sqlite:///{tmp_path / 'v2.db'}")
     migrate_if_needed(eng)
     insert_run_row(eng)
@@ -72,3 +72,70 @@ def test_seed_creates_segments_in_bar(client, db):
     segs = db.query(Segment).order_by(Segment.order_index).all()
     assert [s.code for s in segs] == ["SEG-01", "SEG-02", "SEG-03", "SEG-04", "SEG-05", "SEG-06"]
     assert segs[2].equipment == "pump" and segs[4].design_pressure_bar == 82.7
+
+
+def test_v2_upgrades_to_current_and_keeps_runs_and_users(tmp_path):
+    from sqlalchemy import inspect
+    from app.database import Base
+    from app.models import Meta
+    eng = create_engine(f"sqlite:///{tmp_path / 'v2.db'}")
+    Base.metadata.create_all(eng)
+    with eng.begin() as c:
+        c.execute(Meta.__table__.insert(), [{"key": "schema_version", "value": "2"}])
+        c.execute(text("INSERT INTO users (username, email, hashed_password, role, is_active) VALUES ('u','u@x','h','analyst',1)"))
+        c.execute(text("DROP TABLE incidents"))
+        c.execute(text("CREATE TABLE incidents (id INTEGER PRIMARY KEY, run_id INTEGER, old_col TEXT)"))
+        c.execute(text("DROP TABLE evaluation_runs"))
+    insert_run_row(eng)
+    assert migrate_if_needed(eng) is True
+    with eng.connect() as c:
+        assert c.execute(text("select value from meta where key='schema_version'")).scalar() == "4"
+        assert c.execute(text("select count(*) from runs")).scalar() == 1
+        assert c.execute(text("select count(*) from users")).scalar() == 1
+    insp = inspect(eng)
+    assert "evaluation_runs" in insp.get_table_names()
+    assert "key" in [col["name"] for col in insp.get_columns("incidents")]
+    assert migrate_if_needed(eng) is False
+    eng.dispose()
+
+
+def test_v3_is_a_noop(tmp_path):
+    eng = create_engine(f"sqlite:///{tmp_path / 'v3.db'}")
+    assert migrate_if_needed(eng) is True
+    assert migrate_if_needed(eng) is False
+    eng.dispose()
+
+
+def test_v3_to_v4_adds_playback_columns_and_keeps_analysis_rows(tmp_path):
+    """A real v3 shape: runs without playback columns, analysis_results with a NOT NULL trust score."""
+    from sqlalchemy import inspect
+    from app.database import Base
+    from app.models import Meta
+    eng = create_engine(f"sqlite:///{tmp_path / 'v3.db'}")
+    Base.metadata.create_all(eng)
+    with eng.begin() as c:
+        c.execute(Meta.__table__.insert(), [{"key": "schema_version", "value": "3"}])
+        c.execute(text("ALTER TABLE runs DROP COLUMN paused_at"))
+        c.execute(text("ALTER TABLE runs DROP COLUMN paused_seconds"))
+        c.execute(text("DROP TABLE analysis_results"))
+        c.execute(text("CREATE TABLE analysis_results (id INTEGER PRIMARY KEY, run_id INTEGER NOT NULL, "
+                       "segment_id INTEGER NOT NULL, tick INTEGER NOT NULL, model_version_id INTEGER, anomaly_score FLOAT, "
+                       "ml_flag BOOLEAN, trust_score FLOAT NOT NULL, trust_status VARCHAR(20) NOT NULL, trust_factors TEXT, "
+                       "checks TEXT, baseline_alarms TEXT, state VARCHAR(20) NOT NULL)"))
+        c.execute(text("CREATE INDEX ix_results_run_tick ON analysis_results (run_id, tick)"))
+        c.execute(text("INSERT INTO analysis_results (run_id, segment_id, tick, anomaly_score, ml_flag, trust_score, "
+                       "trust_status, trust_factors, checks, baseline_alarms, state) "
+                       "VALUES (1, 1, 0, 0.1, 0, 0.93, 'Supported', '[]', '{}', '{}', 'normal')"))
+    insert_run_row(eng)
+    assert migrate_if_needed(eng) is True
+    insp = inspect(eng)
+    assert {"paused_at", "paused_seconds"} <= {col["name"] for col in insp.get_columns("runs")}
+    trust = next(col for col in insp.get_columns("analysis_results") if col["name"] == "trust_score")
+    assert trust["nullable"]
+    with eng.connect() as c:
+        assert c.execute(text("select value from meta where key='schema_version'")).scalar() == "4"
+        assert c.execute(text("select trust_score, trust_status from analysis_results")).one() == (0.93, "Supported")
+        assert c.execute(text("select paused_seconds from runs")).scalar() == 0
+    assert "analysis_results_v3" not in insp.get_table_names()
+    assert migrate_if_needed(eng) is False
+    eng.dispose()

@@ -1,4 +1,4 @@
-"""Model management: list versions and metrics; train and activate (admin)."""
+"""Model management (spec §6.4, §8): list versions and metrics; train and activate (admin)."""
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models import ActivityLog, ModelVersion, User
 from app.services import registry
 from app.services import runs as runs_service
+from app.services.evaluations import without_scenario_types
 
 router = APIRouter(prefix="/models", tags=["models"])
 
@@ -20,7 +21,7 @@ class TrainRequest(BaseModel):
     alpha: float = Field(default=0.004, ge=0.001, le=0.05)
 
 
-def model_out(db: Session, mv: ModelVersion, detail: bool = False) -> dict:
+def model_out(db: Session, mv: ModelVersion, detail: bool = False, role: str = "analyst") -> dict:
     stored = json.loads(mv.metrics_json or "{}")
     check = stored.get("targets_check", {})
     creator = db.get(User, mv.created_by) if mv.created_by else None
@@ -31,10 +32,15 @@ def model_out(db: Session, mv: ModelVersion, detail: bool = False) -> dict:
         "error": mv.error, "threshold": mv.threshold, "feature_spec": mv.feature_spec,
         "params": json.loads(mv.params_json or "{}"), "headline": stored.get("headline", {}),
         "targets_passed": sum(1 for c in check.values() if c["passed"]), "targets_total": len(check),
+        "artifact_available": registry.artifact_available(mv) if mv.status == "ready" else None,
+        "has_validation": bool(stored.get("validation")),
     }
     if detail:
-        out.update({"metrics": stored.get("metrics", {}), "targets_check": check,
-                    "targets": json.loads(mv.targets_json or "{}"), "dataset": json.loads(mv.dataset_json or "{}")})
+        # Validation outcomes are kept apart from the test metrics; null for versions that never recorded them.
+        shape = (lambda doc: doc) if role == "admin" else without_scenario_types
+        out.update({"metrics": shape(stored.get("metrics", {})), "validation": shape(stored.get("validation")),
+                    "targets_check": check, "targets": json.loads(mv.targets_json or "{}"),
+                    "dataset": shape(json.loads(mv.dataset_json or "{}"))})
     return out
 
 
@@ -48,7 +54,7 @@ def get_model(model_id: int, db: Session = Depends(get_db), user: User = Depends
     mv = db.get(ModelVersion, model_id)
     if mv is None:
         raise HTTPException(status_code=404, detail="Model version not found")
-    return model_out(db, mv, detail=True)
+    return model_out(db, mv, detail=True, role=user.role)
 
 
 @router.post("/train")

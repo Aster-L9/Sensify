@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,106 +10,142 @@ import {
   Activity,
   Users,
   User,
-  Shield,
-  Database,
-  Radio,
+  LogOut,
   BellRing,
   FlaskConical,
-  BrainCircuit
+  BrainCircuit,
+  FileSearch,
+  Scale,
+  X,
+  type LucideIcon,
 } from 'lucide-react';
+
+interface NavItem { name: string; href: string; icon: LucideIcon }
 
 export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (v: boolean) => void }) {
   const pathname = usePathname();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Pipeline Map', href: '/map', icon: Map },
-    { name: 'Simulation Runs', href: '/runs', icon: Activity },
-    { name: 'Alerts', href: '/alerts', icon: BellRing },
+  const groups: { label: string; items: NavItem[] }[] = [
+    {
+      label: 'Monitor',
+      items: [
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Pipeline map', href: '/map', icon: Map },
+        { name: 'Simulation runs', href: '/runs', icon: Activity },
+        { name: 'Alerts', href: '/alerts', icon: BellRing },
+      ],
+    },
+    {
+      label: 'Investigate',
+      items: [
+        { name: 'Incidents', href: '/incidents', icon: FileSearch },
+        { name: 'Evaluation', href: '/evaluation', icon: Scale },
+      ],
+    },
     ...(isAdmin
-      ? [
-          { name: 'Scenario Builder', href: '/scenarios', icon: FlaskConical },
-          { name: 'Models', href: '/models', icon: BrainCircuit },
-          { name: 'User Management', href: '/admin/users', icon: Users },
-        ]
+      ? [{
+          label: 'Administer',
+          items: [
+            { name: 'Scenario builder', href: '/scenarios', icon: FlaskConical },
+            { name: 'Models', href: '/models', icon: BrainCircuit },
+            { name: 'Users', href: '/admin/users', icon: Users },
+          ],
+        }]
       : []),
-    { name: 'My Profile', href: '/profile', icon: User },
   ];
+
+  // The active pill is one element that glides between links, so the change of page reads as movement.
+  const navRef = useRef<HTMLElement>(null);
+  const [pill, setPill] = useState<{ top: number; height: number } | null>(null);
+  const activeHref = [...groups.flatMap((g) => g.items), { name: 'Profile', href: '/profile', icon: User }]
+    .find((i) => pathname === i.href || pathname.startsWith(i.href + '/'))?.href;
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const el = nav?.querySelector<HTMLElement>(`[data-href="${activeHref}"]`);
+    setPill(el && nav ? { top: el.offsetTop, height: el.offsetHeight } : null);
+  }, [activeHref, isAdmin]);
+
+  const link = (item: NavItem) => {
+    const active = item.href === activeHref;
+    const Icon = item.icon;
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        data-href={item.href}
+        onClick={() => setIsOpen?.(false)}
+        aria-current={active ? 'page' : undefined}
+        className={active ? 'sidebar-link-active' : 'sidebar-link'}
+      >
+        <Icon className={`w-[18px] h-[18px] transition-colors ${active ? 'text-brand-600' : 'text-gray-400'}`} aria-hidden />
+        <span>{item.name}</span>
+      </Link>
+    );
+  };
 
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] md:hidden transition-opacity"
+          className="fixed inset-0 bg-gray-900/20 backdrop-blur-[2px] z-[9998] md:hidden animate-fade-in"
           onClick={() => setIsOpen?.(false)}
         />
       )}
-      <aside className={`w-64 bg-white border-r border-gray-200 flex flex-col h-screen fixed left-0 top-0 z-[9999] shadow-sm transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-      {/* Brand Header */}
-      <div className="p-5 border-b border-gray-100 flex items-center gap-3">
-        <img src="/sensify-logo.png" alt="Sensify" className="w-10 h-10 rounded-xl object-contain" />
-        <div>
-          <h1 className="font-bold text-gray-900 tracking-wide text-sm leading-none">
-            Sensify
-          </h1>
-          <span className="text-[10px] text-gray-500 font-mono">v1.1.0</span>
+      <aside
+        className={`w-60 bg-canvas flex flex-col h-screen fixed left-0 top-0 z-[9999] transition-transform duration-300 ease-out md:translate-x-0 ${
+          isOpen ? 'translate-x-0 shadow-lift' : '-translate-x-full'
+        }`}
+      >
+        <div className="px-5 pt-6 pb-5 flex items-center gap-3">
+          <img src="/sensify-logo.png" alt="" className="w-9 h-9 object-contain" />
+          <span className="display text-lg font-semibold tracking-tight text-gray-900">Sensify</span>
+          <button className="md:hidden ml-auto btn-ghost p-1.5" onClick={() => setIsOpen?.(false)} aria-label="Close navigation">
+            <X className="w-4 h-4" aria-hidden />
+          </button>
         </div>
-      </div>
 
-      {/* Live System Indicator */}
-      <div className="mx-4 my-4 p-3 rounded-xl bg-gray-50 border border-gray-100 flex items-center gap-3">
-        <div className="relative flex h-2.5 w-2.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-500"></span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-gray-700 truncate flex items-center gap-1">
-            <Radio className="w-3 h-3 text-brand-500" /> Pipeline Telemetry
-          </p>
-          <p className="text-[10px] text-gray-500 truncate font-mono">Sensify Pipeline Network</p>
-        </div>
-      </div>
-
-      {/* Navigation Links */}
-      <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto py-2">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={isActive
-                ? 'flex items-center gap-3 px-4 py-2.5 rounded-xl bg-brand-50 text-brand-600 text-sm font-bold shadow-sm shadow-brand-500/10'
-                : 'sidebar-link'}
-            >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-brand-500' : 'text-gray-500'}`} />
-              <span>{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* User Role Card Footer */}
-      <div className="p-4 border-t border-gray-100">
-        <div className="glass-card p-3 flex items-center gap-3 bg-gray-50">
-          <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center font-bold text-xs text-brand-500">
-            {user?.username?.[0]?.toUpperCase() || 'U'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-800 truncate">{user?.username || 'Guest'}</p>
-            <div className="flex items-center gap-1 mt-0.5">
-              <Shield className="w-3 h-3 text-brand-500" />
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold font-mono">
-                {user?.role || 'Analyst'}
-              </span>
+        <nav ref={navRef} className="relative flex-1 px-3 overflow-y-auto pb-4" aria-label="Main">
+          {pill && (
+            <span
+              aria-hidden
+              className="absolute left-3 right-3 rounded-[10px] bg-white shadow-sheet transition-[top,height] duration-300 ease-out"
+              style={{ top: pill.top, height: pill.height }}
+            />
+          )}
+          {groups.map((g) => (
+            <div key={g.label} className="mb-5">
+              <p className="px-3 mb-1.5 text-xs font-medium text-gray-400">{g.label}</p>
+              <div className="space-y-0.5">{g.items.map(link)}</div>
             </div>
+          ))}
+        </nav>
+
+        <div className="px-3 pb-5 pt-3 border-t border-rule mx-3">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/profile"
+              data-href="/profile"
+              onClick={() => setIsOpen?.(false)}
+              className={`flex-1 min-w-0 flex items-center gap-3 rounded-[10px] px-2 py-2 transition-colors ${
+                activeHref === '/profile' ? 'bg-white shadow-sheet' : 'hover:bg-white/60'
+              }`}
+            >
+              <span className="w-8 h-8 shrink-0 rounded-full bg-brand-600 text-white grid place-items-center text-sm font-semibold">
+                {user?.username?.[0]?.toUpperCase() || 'U'}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-gray-900 truncate">{user?.username}</span>
+                <span className="block text-xs text-gray-500">{user?.role === 'admin' ? 'Administrator' : 'Analyst'}</span>
+              </span>
+            </Link>
+            <button onClick={logout} className="btn-ghost p-2" aria-label="Sign out" title="Sign out">
+              <LogOut className="w-4 h-4" aria-hidden />
+            </button>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
     </>
   );
 }

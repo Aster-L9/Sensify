@@ -1,5 +1,5 @@
 """
-Run engine: simulates one run end to end.
+Run engine: simulates one run end to end (spec §3.3–3.6).
 
 Produces the actual process (ground truth), what the instruments report, the
 event stream and the ground-truth labels. Independent RNG streams per concern
@@ -206,7 +206,7 @@ def _ground_truth_event(tick: int, segment: str, source: str, category: str, eve
 
 
 def _scenario_effects(cfg: ScenarioConfig, rng, base: _Controls, n: int) -> _Effects:
-    """Process changes and events for the scenario. Reporting overrides come later."""
+    """Process changes and events for the scenario (spec §3.4). Reporting overrides come later."""
     fx = _Effects()
     if cfg.scenario_type == "normal":
         return fx
@@ -308,7 +308,7 @@ def _scenario_effects(cfg: ScenarioConfig, rng, base: _Controls, n: int) -> _Eff
 
 
 def _apply_reporting(cfg: ScenarioConfig, honest: dict[str, np.ndarray], rng):
-    """Reporting-layer overrides at the target.
+    """Reporting-layer overrides at the target (spec §3.4).
 
     Returns the reported values, the ticks where a hold (replay/conceal/stuck) is
     active, and the ticks where the reporting override is in force.
@@ -366,7 +366,7 @@ def _apply_reporting(cfg: ScenarioConfig, honest: dict[str, np.ndarray], rng):
 
 
 def _labels(cfg: ScenarioConfig, actual, counterfactual, reported, hold, window):
-    """Ground-truth labels per tick and segment, plus the peak tick."""
+    """Ground-truth labels per tick and segment, plus the peak tick (spec §3.6)."""
     n = cfg.duration_ticks
     phase = np.full(n, "baseline", dtype=object)
     is_target = np.zeros(N_SEG, dtype=bool)

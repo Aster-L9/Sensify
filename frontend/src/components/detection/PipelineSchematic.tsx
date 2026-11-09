@@ -19,6 +19,10 @@ interface PipelineSchematicProps {
   allowed?: string[] | null; // when set, only these segments can be picked
   onSelect?: (code: string) => void;
   label?: string;
+  /** Product flows along the pipe while a run plays; pass false when it is paused or finished. */
+  flowing?: boolean;
+  /** Draw the line in once when it first appears (the dashboard's opening moment). */
+  intro?: boolean;
 }
 
 const VIEW_W = 960;
@@ -29,6 +33,7 @@ const RIGHT = 924;
 /** The six-segment chain drawn like a process diagram, coloured by state. */
 export function PipelineSchematic({
   segments, states = {}, captions = {}, selected, allowed, onSelect, label = 'Pipeline line view',
+  flowing = false, intro = false,
 }: PipelineSchematicProps) {
   const span = (RIGHT - LEFT) / Math.max(segments.length, 1);
 
@@ -49,6 +54,11 @@ export function PipelineSchematic({
         {/* flow direction */}
         <line x1={LEFT - 30} y1={PIPE_Y} x2={LEFT - 6} y2={PIPE_Y} stroke={COLORS.muted} strokeWidth={1.5} markerEnd="url(#flow-arrow)" />
         <line x1={RIGHT + 6} y1={PIPE_Y} x2={RIGHT + 28} y2={PIPE_Y} stroke={COLORS.muted} strokeWidth={1.5} markerEnd="url(#flow-arrow)" />
+
+        {intro && (
+          <line x1={LEFT} y1={PIPE_Y} x2={RIGHT} y2={PIPE_Y} stroke={COLORS.grid} strokeWidth={16} pathLength={1000}
+            className="schematic-draw" aria-hidden />
+        )}
 
         {segments.map((seg, i) => {
           const x1 = LEFT + i * span;
@@ -78,6 +88,7 @@ export function PipelineSchematic({
               }}
               className={`schematic-seg ${interactive ? 'cursor-pointer' : ''} ${disabled ? 'opacity-40' : ''}`}
             >
+              <g className={intro ? 'schematic-node' : undefined} style={intro ? { animationDelay: `${450 + i * 90}ms` } : undefined}>
               {/* hit area + selection */}
               <rect
                 x={x1 + 3} y={14} width={span - 6} height={128} rx={12}
@@ -87,7 +98,7 @@ export function PipelineSchematic({
                 className="schematic-hit"
               />
               {/* pipe casing */}
-              <line x1={x1} y1={PIPE_Y} x2={x2} y2={PIPE_Y} stroke={COLORS.grid} strokeWidth={16} strokeLinecap="butt" />
+              {!intro && <line x1={x1} y1={PIPE_Y} x2={x2} y2={PIPE_Y} stroke={COLORS.grid} strokeWidth={16} strokeLinecap="butt" />}
               {/* state line; low trust is dashed so it never relies on colour alone */}
               {state !== 'normal' && (
                 <line
@@ -102,15 +113,22 @@ export function PipelineSchematic({
                 stroke={style.color}
                 strokeWidth={state === 'normal' ? 5 : 8}
                 strokeDasharray={style.dash}
-                strokeLinecap={style.dash ? 'butt' : 'round'}
+                strokeLinecap={style.dash ? (state === 'insufficient' ? 'round' : 'butt') : 'round'}
               />
+              {/* flowing product: only where readings are trusted, so a flagged segment stays still and stands out */}
+              {flowing && state === 'normal' && (
+                <line x1={x1 + 4} y1={PIPE_Y} x2={x2 - 4} y2={PIPE_Y} stroke="#fff" strokeOpacity={0.85} strokeWidth={2.5}
+                  strokeLinecap="round" className="schematic-flow" aria-hidden />
+              )}
               <EquipmentGlyph kind={seg.equipment ?? null} type={seg.segment_type} x={mid} color={state === 'normal' ? COLORS.ink : style.color} />
 
               {/* abnormal badge */}
               {state !== 'normal' && (
                 <g transform={`translate(${mid + (seg.equipment ? 24 : 0) - 9}, ${PIPE_Y - 40})`} aria-hidden>
                   <circle cx={9} cy={9} r={10} fill="#fff" stroke={style.color} strokeWidth={1.5} />
-                  {state === 'anomalous' ? (
+                  {state === 'insufficient' ? (
+                    <path d="M6 9 H6.2 M9 9 H9.2 M12 9 H12.2" fill="none" stroke={style.color} strokeWidth={2.4} strokeLinecap="round" />
+                  ) : state === 'anomalous' ? (
                     <path d="M9 3.5 L15 14 L3 14 Z M9 7.5 V10.5 M9 12.2 V12.4" fill="none" stroke={style.color} strokeWidth={1.6} strokeLinejoin="round" strokeLinecap="round" />
                   ) : (
                     <path d="M9 3.5 L14.5 5.5 V9.5 C14.5 12.5 12 14.5 9 15.5 C6 14.5 3.5 12.5 3.5 9.5 V5.5 Z M9 7 V10 M9 12 V12.2" fill="none" stroke={style.color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
@@ -121,17 +139,18 @@ export function PipelineSchematic({
               {/* junction node */}
               {i > 0 && <circle cx={x1} cy={PIPE_Y} r={4} fill="#fff" stroke={COLORS.muted} strokeWidth={1.5} />}
 
-              <text x={mid} y={104} textAnchor="middle" className="fill-gray-900" style={{ font: '600 15px Inter, system-ui, sans-serif' }}>
+              <text x={mid} y={104} textAnchor="middle" className="fill-gray-900" style={{ font: '650 15px Archivo, system-ui, sans-serif', fontStretch: '115%' }}>
                 {seg.code}
               </text>
-              <text x={mid} y={122} textAnchor="middle" className="fill-gray-500" style={{ font: '400 12px Inter, system-ui, sans-serif' }}>
+              <text x={mid} y={122} textAnchor="middle" className="fill-gray-500" style={{ font: '400 12px Archivo, system-ui, sans-serif' }}>
                 {shortName(seg.name)}
               </text>
               {captions[seg.code] && (
-                <text x={mid} y={139} textAnchor="middle" style={{ font: '500 12px "JetBrains Mono", ui-monospace, monospace', fill: state === 'normal' ? COLORS.muted : style.textColor }}>
+                <text x={mid} y={139} textAnchor="middle" style={{ font: '500 12px Archivo, system-ui, sans-serif', fontVariantNumeric: 'tabular-nums', fill: state === 'normal' ? COLORS.muted : style.textColor }}>
                   {captions[seg.code]}
                 </text>
               )}
+              </g>
             </g>
           );
         })}

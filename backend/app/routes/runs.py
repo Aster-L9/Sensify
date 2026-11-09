@@ -11,6 +11,7 @@ from app.models import (
     AnalysisResult, Event, GroundTruthTelemetry, Run, ScenarioGroundTruth, Segment, Telemetry, User, UserRole,
 )
 from app.schemas import EventOut, RunCreate, RunStateOut, SegmentStateOut
+from app.routes.references import segment_or_404
 from app.services import runs as runs_service
 from app.services.scoring import alerts_for_run
 from app.sim.scenarios import ScenarioError, validate_config
@@ -59,6 +60,33 @@ def create_normal_run(data: RunCreate, db: Session = Depends(get_db), admin: Use
     return runs_service.run_out(run, admin)
 
 
+def _playback(action, run_id: int, db: Session, admin: User) -> dict:
+    run = get_run_or_404(db, run_id)
+    try:
+        action(db, run, admin)
+    except runs_service.PlaybackError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    return runs_service.run_out(run, admin)
+
+
+@router.post("/{run_id}/pause")
+def pause_run(run_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Freeze the shared playback position for every viewer (409 unless the run is playing)."""
+    return _playback(runs_service.pause_run, run_id, db, admin)
+
+
+@router.post("/{run_id}/resume")
+def resume_run(run_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Continue a paused run from the tick it was paused at (409 unless the run is paused)."""
+    return _playback(runs_service.resume_run, run_id, db, admin)
+
+
+@router.post("/{run_id}/reset")
+def reset_run(run_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Rewind the run to T+00:00 and pause it. Seed, settings and stored data are kept, so it replays identically."""
+    return _playback(runs_service.reset_run, run_id, db, admin)
+
+
 @router.get("/{run_id}/state", response_model=RunStateOut)
 def get_run_state(
     run_id: int,
@@ -69,27 +97,24 @@ def get_run_state(
     run = get_run_or_404(db, run_id)
     revealed, status = runs_service.reveal(run)
     tick = runs_service.resolve_tick(run, at)
-    rows = (
-        db.query(Telemetry, Segment)
-        .join(Segment, Telemetry.segment_id == Segment.id)
-        .filter(Telemetry.run_id == run_id, Telemetry.tick == tick)
-        .order_by(Segment.order_index)
-        .all()
-    )
+    readings = {t.segment_id: t for t in db.query(Telemetry).filter(Telemetry.run_id == run_id, Telemetry.tick == tick)}
     results = {r.segment_id: r for r in db.query(AnalysisResult).filter(
         AnalysisResult.run_id == run_id, AnalysisResult.tick == tick).all()}
     segments = []
-    for t, seg in rows:
-        res = results.get(seg.id)
+    # Every segment is listed: one with no stored reading at this tick shows empty values, never disappears.
+    for seg in db.query(Segment).order_by(Segment.order_index).all():
+        t, res = readings.get(seg.id), results.get(seg.id)
         factors = json.loads(res.trust_factors) if res else []
         segments.append(SegmentStateOut(
             segment_id=seg.id, code=seg.code, name=seg.name, segment_type=seg.segment_type,
-            pressure_bar=t.pressure_bar, flow_m3h=t.flow_m3h, temperature_c=t.temperature_c,
-            valve_open_pct=t.valve_open_pct, pump_speed_pct=t.pump_speed_pct,
-            valve_state=t.valve_state, equipment_state=t.equipment_state,
+            pressure_bar=t.pressure_bar if t else None, flow_m3h=t.flow_m3h if t else None,
+            temperature_c=t.temperature_c if t else None,
+            valve_open_pct=t.valve_open_pct if t else None, pump_speed_pct=t.pump_speed_pct if t else None,
+            valve_state=t.valve_state if t else None, equipment_state=t.equipment_state if t else None,
             anomaly_score=res.anomaly_score if res else None, ml_flag=res.ml_flag if res else False,
             trust_score=res.trust_score if res else None, trust_status=res.trust_status if res else None,
-            state=res.state if res else "normal", top_factor=factors[0] if factors else None, factors=factors,
+            state=res.state if res else ("normal" if t else "insufficient"),
+            top_factor=factors[0] if factors else None, factors=factors,
         ))
     cutoff = revealed - 1
     open_alerts = sum(1 for a in alerts_for_run(db, run, cutoff) if a["start_tick"] <= tick <= a["end_tick"])
@@ -104,12 +129,14 @@ def get_run_state(
 def get_run_events(
     run_id: int,
     category: Optional[str] = None,
-    segment_id: Optional[int] = None,
+    segment_id: Optional[int] = Query(default=None, ge=1),
     include_ground_truth: bool = False,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     run = get_run_or_404(db, run_id)
+    if segment_id is not None:
+        segment_or_404(db, segment_id)
     cutoff = runs_service.resolve_tick(run, None)
     query = db.query(Event, Segment).outerjoin(Segment, Event.segment_id == Segment.id).filter(
         Event.run_id == run_id, Event.tick <= cutoff)

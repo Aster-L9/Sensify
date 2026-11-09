@@ -60,9 +60,9 @@ export default function ScenarioBuilderPage() {
   const { isAdmin } = useAuth();
   if (!isAdmin) {
     return (
-      <div className="glass-card p-12 text-center border-red-500/30">
-        <Shield className="w-12 h-12 text-red-400 mx-auto mb-3" aria-hidden />
-        <h2 className="text-xl font-bold text-gray-900">Access Restricted</h2>
+      <div className="glass-card p-12 text-center">
+        <Shield className="w-10 h-10 text-gray-400 mx-auto mb-3" aria-hidden />
+        <h1 className="text-xl font-semibold text-gray-900">Administrators only</h1>
         <p className="text-sm text-gray-500 mt-1">Only administrators can design and launch scenarios.</p>
       </div>
     );
@@ -185,9 +185,7 @@ function Builder() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <FlaskConical className="w-6 h-6 text-brand-500" aria-hidden /> Scenario builder
-        </h1>
+        <h1 className="text-[28px] leading-tight text-gray-900">Scenario builder</h1>
         <p className="text-sm text-gray-500 mt-1 max-w-2xl">
           Design an incident on the line and launch it. Everyone signed in watches the run unfold at the speed you
           choose; analysts see what Sensify finds, never the scenario itself.

@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertTriangle, Inbox, SearchX } from 'lucide-react';
 
 interface StateProps {
   title?: string;
@@ -7,54 +8,55 @@ interface StateProps {
   className?: string;
 }
 
-export function LoadingState({ message = 'Loading pipeline telemetry...' }: { message?: string }) {
+/** A short flowing line instead of a spinner: the same motion as the live pipeline. */
+export function LoadingState({ message = 'Loading' }: { message?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center p-12 text-center min-h-[250px]">
-      <div className="relative w-12 h-12 mb-4">
-        <div className="absolute inset-0 rounded-full border-2 border-brand-500/20 animate-ping"></div>
-        <div className="w-12 h-12 rounded-full border-2 border-brand-500 border-t-transparent animate-spin"></div>
-      </div>
-      <p className="text-sm font-medium text-gray-500 animate-pulse">{message}</p>
+    <div className="flex flex-col items-center justify-center p-12 text-center min-h-[240px]" role="status" aria-live="polite">
+      <svg width="120" height="8" viewBox="0 0 120 8" aria-hidden className="mb-4">
+        <line x1="4" y1="4" x2="116" y2="4" stroke="#e3e5ed" strokeWidth="6" strokeLinecap="round" />
+        <line x1="4" y1="4" x2="116" y2="4" stroke="#7169d5" strokeWidth="6" strokeLinecap="round" className="schematic-flow" />
+      </svg>
+      <p className="text-sm text-gray-500">{message}</p>
     </div>
   );
 }
 
 export function EmptyState({
-  title = 'No Data Found',
-  message = 'There are no active records or simulation runs available.',
-  action
-}: StateProps & { action?: React.ReactNode }) {
+  title = 'Nothing here yet',
+  message = 'There is nothing to show for now.',
+  action,
+  icon = 'empty',
+  className = '',
+}: StateProps & { action?: React.ReactNode; icon?: 'empty' | 'search' }) {
+  const Icon = icon === 'search' ? SearchX : Inbox;
   return (
-    <div className="flex flex-col items-center justify-center p-12 text-center min-h-[250px] glass-card border-dashed border-gray-200">
-      <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-500 mb-4">
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-      </div>
-      <h3 className="text-base font-semibold text-gray-800 mb-1">{title}</h3>
-      <p className="text-sm text-gray-500 max-w-sm mb-6">{message}</p>
-      {action}
+    <div className={`flex flex-col items-center justify-center px-6 py-12 text-center animate-fade-in ${className}`} role="status">
+      <span className="w-11 h-11 rounded-full bg-gray-100 text-gray-500 grid place-items-center mb-3">
+        <Icon className="w-5 h-5" aria-hidden />
+      </span>
+      <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+      <p className="mt-1 text-sm text-gray-500 max-w-sm">{message}</p>
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }
 
 export function ErrorState({
-  title = 'Connection Error',
-  message = 'Failed to communicate with backend service. Please check your network or try again.',
-  onRetry
+  title = 'Could not reach Sensify',
+  message = 'The server did not answer. Check that the backend is running, then try again.',
+  onRetry,
+  className = '',
 }: StateProps) {
   return (
-    <div className="flex flex-col items-center justify-center p-10 text-center min-h-[250px] glass-card border-red-500/20 bg-red-500/5">
-      <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-4">
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      </div>
-      <h3 className="text-base font-semibold text-gray-800 mb-1">{title}</h3>
-      <p className="text-sm text-gray-500 max-w-md mb-6">{message}</p>
+    <div className={`glass-card flex flex-col items-center justify-center px-6 py-10 text-center min-h-[220px] animate-fade-in ${className}`} role="alert">
+      <span className="w-11 h-11 rounded-full bg-red-50 text-red-700 grid place-items-center mb-3">
+        <AlertTriangle className="w-5 h-5" aria-hidden />
+      </span>
+      <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+      <p className="mt-1 text-sm text-gray-500 max-w-md">{message}</p>
       {onRetry && (
-        <button onClick={onRetry} className="btn-secondary text-sm py-2 px-4">
-          Try Again
+        <button onClick={onRetry} className="btn-secondary mt-4">
+          Try again
         </button>
       )}
     </div>

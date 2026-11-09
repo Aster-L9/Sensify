@@ -79,7 +79,8 @@ def load_dataset(path: Path) -> list[DatasetRun]:
 
         run_events = [
             ObservableEvent(int(e.tick), _optional_str(e.segment_id), e.event_source, e.category, e.event_type,
-                            e.authorized, e.severity)
+                            e.authorized, e.severity,
+                            "" if pd.isna(e.details) else str(e.details))
             for e in events_by_run.get(rid, pd.DataFrame()).itertuples()
         ]
         reported = ReportedRun(*(grid(col) for col in REPORTED_COLUMNS.values()), events=run_events)

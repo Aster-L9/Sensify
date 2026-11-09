@@ -60,8 +60,9 @@ def test_admin_sees_scenario_fields_and_ground_truth(client, admin_headers, monk
     assert gt["summary"]["event_start_tick"] == 72 and gt["summary"]["target_segment"] == "SEG-04"
 
 
-def test_catalog_and_topology_shapes(client, analyst_headers):
-    cat = client.get("/scenarios", headers=analyst_headers).json()
+def test_catalog_and_topology_shapes(client, admin_headers, analyst_headers):
+    assert client.get("/scenarios", headers=analyst_headers).status_code == 403
+    cat = client.get("/scenarios", headers=admin_headers).json()
     assert [t["id"] for t in cat["types"]][0] == "normal" and cat["playback_speeds"] == [1, 5, 10, 20]
     topo = client.get("/topology", headers=analyst_headers).json()
     assert topo["segments"][2]["code"] == "SEG-03" and topo["segments"][2]["equipment"] == "pump"

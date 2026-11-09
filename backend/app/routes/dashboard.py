@@ -1,4 +1,5 @@
-"""Dashboard summary: run counts, live values, anomaly/trust alerts and detection rate."""
+"""Dashboard summary (spec §8): run counts, live values, anomaly/trust alerts and detection rate."""
+import json
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends
@@ -7,15 +8,18 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import AnalysisResult, Run, RunStatus, ScenarioGroundTruth, Telemetry, User, UserRole
+from app.investigation.types import CATEGORIES
+from app.models import AnalysisResult, EvaluationRun, Run, RunStatus, ScenarioGroundTruth, Telemetry, User, UserRole
 from app.routes.alerts import collect_alerts
+from app.routes.demo import latest_demo_run_id
 from app.services import runs as runs_service
+from app.services.investigation import incident_out, incidents_for_run
 from app.services.runs import resolve_tick, run_out
 from app.services.scoring import ordered_segments
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
-STATES = ("normal", "anomalous", "low_trust")
+STATES = ("normal", "anomalous", "low_trust", "insufficient")
 GRACE_TICKS = 12
 
 
@@ -71,13 +75,51 @@ def _runs_flagged(runs: list[Run], alerts: list[dict]) -> dict:
     return {"flagged": sum(r.id in with_alerts for r in completed), "completed": len(completed)}
 
 
+def _latest_evaluation(db: Session) -> dict | None:
+    ev = db.query(EvaluationRun).filter(EvaluationRun.status == "ready").order_by(EvaluationRun.id.desc()).first()
+    if not ev:
+        return None
+    try:
+        results = json.loads(ev.results or "{}")
+    except ValueError:
+        results = {}
+
+    def dig(d, *path):
+        for k in path:
+            d = d.get(k) if isinstance(d, dict) else None
+        return d
+
+    out = {"id": ev.id, "version": ev.version, "created_at": ev.created_at}
+    for ds in ("development", "heldout"):
+        systems = dig(results, "datasets", ds, "systems") or {}
+        out[ds] = {s: {
+            "detection_rate": dig(systems, s, "detection", "overall", "rate"),
+            "incidents_per_normal_run": dig(systems, s, "investigation", "incidents_per_normal_run"),
+            "classification_accuracy": dig(systems, s, "investigation", "classification_accuracy", "rate"),
+        } for s in ("A", "B", "C")}
+    return out
+
+
+def _incident_tiles(db: Session, runs: list[Run]) -> tuple[dict, list[dict]]:
+    counts = dict.fromkeys(CATEGORIES, 0) | {"uncertain": 0}
+    open_items = []
+    for run in runs:
+        for d in incidents_for_run(db, run, resolve_tick(run, None)):
+            counts[d["classification"]] = counts.get(d["classification"], 0) + 1
+            if d["status"] in ("developing", "investigating"):
+                open_items.append(incident_out(d, run, detail=False))
+    open_items.sort(key=lambda o: o["detected_time"], reverse=True)
+    return counts, open_items[:5]
+
+
 @router.get("/summary")
 def get_dashboard_summary(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     now = runs_service.utcnow()
     runs = db.query(Run).order_by(Run.started_at.desc(), Run.id.desc()).all()
     alerts = collect_alerts(db, runs)  # also refreshes run statuses
     started = [r for r in runs if r.started_at <= now]  # a run scheduled in the future is not the active run
-    active = next((r for r in started if r.status == RunStatus.active.value), None)
+    # A paused run is still the run on screen: its frozen moment is what everyone sees.
+    active = next((r for r in started if r.status in (RunStatus.active.value, RunStatus.paused.value)), None)
     live_run = active or next((r for r in started if r.status == RunStatus.completed.value), None)
     live = _live_block(db, live_run) if live_run else None
 
@@ -101,10 +143,12 @@ def get_dashboard_summary(db: Session = Depends(get_db), user: User = Depends(ge
     else:
         system_status = "idle"
 
+    by_class, open_inv = _incident_tiles(db, runs)
     recent_trust = [a for a in alerts if "low_trust" in a["kinds"]][:5]
     return {
         "total_runs": len(runs),
         "active_runs": sum(r.status == RunStatus.active.value for r in runs),
+        "paused_runs": sum(r.status == RunStatus.paused.value for r in runs),
         "completed_runs": sum(r.status == RunStatus.completed.value for r in runs),
         "total_segments": len(ordered_segments(db)),
         "segments_by_state": states,
@@ -121,4 +165,8 @@ def get_dashboard_summary(db: Session = Depends(get_db), user: User = Depends(ge
         "trust_alerts": (live or {}).get("trust_alerts", []),
         "recent_trust_alerts": recent_trust,
         "alerts_per_day": list(per_day.values()),
+        "incidents_by_classification": by_class,
+        "open_investigations": open_inv,
+        "latest_evaluation": _latest_evaluation(db),
+        "demo_run_id": latest_demo_run_id(db),
     }

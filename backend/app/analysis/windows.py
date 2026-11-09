@@ -1,5 +1,5 @@
 """
-Segment state, flagged windows (alerts) and analysis events.
+Segment state, flagged windows (alerts) and analysis events (spec §5.7).
 """
 from dataclasses import dataclass
 from typing import Callable
@@ -7,7 +7,7 @@ from typing import Callable
 import numpy as np
 
 from app.analysis.consistency import CHECKS, ChecksResult
-from app.analysis.trust import REVIEW_MIN, SUPPORTED_MIN, TrustResult
+from app.analysis.trust import INSUFFICIENT, REVIEW_MIN, SUPPORTED_MIN, TrustResult
 from app.sim.topology import SEGMENT_CODES
 
 CHECK_LABELS = {
@@ -18,7 +18,8 @@ CHECK_LABELS = {
     "replay": "Replayed readings",
     "flatline": "Unnaturally flat readings",
 }
-STATUS_RANK = {"Supported": 0, "Review": 1, "Contradicted": 2}
+STATUS_RANK = {"Supported": 0, INSUFFICIENT: 0, "Review": 1, "Contradicted": 2}
+FLAGGED_STATES = ("anomalous", "low_trust")
 
 
 @dataclass
@@ -44,8 +45,10 @@ class AnalysisEvent:
 
 
 def segment_state(ml_flag: np.ndarray, trust_status: np.ndarray) -> np.ndarray:
-    """Map state per tick and segment: low_trust takes precedence over anomalous."""
-    return np.where(trust_status != "Supported", "low_trust", np.where(ml_flag, "anomalous", "normal")).astype(object)
+    """Map state per tick and segment: insufficient (not enough readings to judge) first, then low_trust,
+    then anomalous. Insufficient is neither normal nor flagged."""
+    state = np.where(trust_status != "Supported", "low_trust", np.where(ml_flag, "anomalous", "normal"))
+    return np.where(trust_status == INSUFFICIENT, "insufficient", state).astype(object)
 
 
 def flag_windows(mask: np.ndarray, max_gap: int = 2, min_len: int = 2) -> list[tuple[int, int]]:
@@ -77,16 +80,16 @@ def build_alerts(scores: np.ndarray, ml_flag: np.ndarray, trust: TrustResult, st
     end = state.shape[0] if upto is None else upto + 1
     alerts = []
     for i in range(state.shape[1]):
-        for s, e in flag_windows(state[:end, i] != "normal"):
-            window_scores = scores[s:e + 1, i]
+        for s, e in flag_windows(np.isin(state[:end, i], FLAGGED_STATES)):
+            window_scores = np.nan_to_num(scores[s:e + 1, i], nan=0.0)  # no score where a feature was missing
             peak_tick = s + int(np.argmax(window_scores))
             peak_score = float(window_scores.max())
-            trust_window = trust.score[s:e + 1, i]
+            trust_window = np.where(np.isnan(trust.score[s:e + 1, i]), np.inf, trust.score[s:e + 1, i])  # gaps merged in
             min_trust = float(trust_window.min())
             kinds = []
             if ml_flag[s:e + 1, i].any():
                 kinds.append("anomaly")
-            if (trust.status[s:e + 1, i] != "Supported").any():
+            if np.isin(trust.status[s:e + 1, i], ("Review", "Contradicted")).any():
                 kinds.append("low_trust")
             parts = []
             if "anomaly" in kinds:

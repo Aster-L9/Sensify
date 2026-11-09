@@ -47,9 +47,7 @@ export default function ProfilePage() {
     <div className="max-w-3xl space-y-6">
       {/* Page Banner */}
       <div className="glass-card p-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <User className="w-6 h-6 text-brand-400" /> Account Settings & Security
-        </h1>
+        <h1 className="text-[28px] leading-tight text-gray-900">Profile</h1>
         <p className="text-xs text-gray-500 mt-1">
           Manage your security credentials and inspect active session RBAC permissions.
         </p>

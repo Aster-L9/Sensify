@@ -24,7 +24,7 @@ def test_missing_dataset_without_generation_fails_cleanly(tmp_path):
 def test_report_keeps_small_rates_visible():
     from ml.train import render_report
 
-    doc = json.loads((Path(__file__).resolve().parents[2] / "docs" / "evaluation" / "sprint-2-v1" / "metrics.json").read_text(encoding="utf-8"))
+    doc = json.loads((Path(__file__).resolve().parents[1] / "model_store" / "v1" / "metrics.json").read_text(encoding="utf-8"))
     text = render_report(doc)
     tick_rate = doc["metrics"]["ml"]["false_alarm"]["tick_rate"]
     assert 0 < tick_rate < 0.001
