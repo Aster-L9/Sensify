@@ -7,7 +7,13 @@ from app.analysis.frame import ObservableEvent, ReportedRun
 from app.investigation.config import EngineConfig
 from app.sim.topology import PUMP_IDX, SEGMENT_CODES, VALVE_IDX
 
-_PCT = re.compile(r"(\d+)%")
+_DIGITS = re.compile(r"\d+")
+
+
+def _percentages(text: str) -> list[str]:
+    """Every whole number written directly before a "%" sign, in order."""
+    return [m.group() for m in _DIGITS.finditer(text) if text.startswith("%", m.end())]
+
 # equipment key -> (segment index, ReportedRun attribute)
 EQUIPMENT = {"valve": (VALVE_IDX, "valve_open"), "pump": (PUMP_IDX, "pump_speed")}
 
@@ -43,7 +49,7 @@ def setpoint_departures(run: ReportedRun, cfg: EngineConfig) -> list[Departure]:
         cmds = sorted((e for e in run.events if e.authorized == "yes" and _equipment_of(e) == equip
                        and 0 <= e.tick < n), key=lambda e: e.tick)
         for e in cmds:
-            m = _PCT.findall(e.details or "")
+            m = _percentages(e.details or "")
             if not m:
                 continue
             setpoint[e.tick:] = float(m[-1])

@@ -67,6 +67,8 @@ interface EvidenceRailProps {
  * The signature element: evidence on the run's time axis, one lane per source, with the
  * attack-to-impact chain above it. Shares the chart frame so it lines up with Sprint 2 charts.
  */
+const stageKey = (s: ChainStage) => `${s.stage}-${s.tick}`;
+
 export function EvidenceRail({ durationTicks, evidence, chain = [], onSelect, cursorTick }: EvidenceRailProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(640);
@@ -150,13 +152,13 @@ export function EvidenceRail({ durationTicks, evidence, chain = [], onSelect, cu
 
           {/* chain connectors, then chips */}
           {chips.map((c, i) => (
-            <line key={`l${i}`} x1={c.tickX} x2={c.tickX} y1={6 + c.row * (CHIP_H + CHIP_GAP) + CHIP_H} y2={lanesTop}
+            <line key={`l-${stageKey(c.stage)}`} x1={c.tickX} x2={c.tickX} y1={6 + c.row * (CHIP_H + CHIP_GAP) + CHIP_H} y2={lanesTop}
               stroke="#A5A4D8" strokeWidth={1} strokeDasharray="3 3" />
           ))}
           {chips.slice(1).map((c, i) => {
             const p = chips[i];
             return (
-              <line key={`a${i}`} x1={p.x + CHIP_W} y1={6 + p.row * (CHIP_H + CHIP_GAP) + CHIP_H / 2}
+              <line key={`a-${stageKey(p.stage)}-${stageKey(c.stage)}`} x1={p.x + CHIP_W} y1={6 + p.row * (CHIP_H + CHIP_GAP) + CHIP_H / 2}
                 x2={c.x} y2={6 + c.row * (CHIP_H + CHIP_GAP) + CHIP_H / 2} stroke="#7169D5" strokeWidth={1.5} />
             );
           })}
@@ -164,7 +166,7 @@ export function EvidenceRail({ durationTicks, evidence, chain = [], onSelect, cu
             const y = 6 + c.row * (CHIP_H + CHIP_GAP);
             const target = c.stage.evidence_ids.map((id) => byId.get(id)).find(Boolean);
             return (
-              <g key={`c${i}`} style={{ cursor: target && onSelect ? 'pointer' : 'default' }}
+              <g key={`c-${stageKey(c.stage)}`} style={{ cursor: target && onSelect ? 'pointer' : 'default' }}
                 onClick={() => target && onSelect?.(target)}>
                 <rect x={c.x} y={y} width={CHIP_W} height={CHIP_H} rx={8} fill="#EEF0FB" stroke="#7169D5" />
                 <text x={c.x + CHIP_W / 2} y={y + CHIP_H / 2} textAnchor="middle" dominantBaseline="middle" fontSize={11} fill="#4B4AA3">
@@ -204,7 +206,7 @@ export function EvidenceRail({ durationTicks, evidence, chain = [], onSelect, cu
       {evidence.length > 0 && (
         <ul className="sr-only" aria-label="Evidence items">
           {chain.map((s, i) => (
-            <li key={`chain-${i}`}>Stage {i + 1}: {s.label} at {formatTick(s.tick)}</li>
+            <li key={`chain-${stageKey(s)}`}>Stage {i + 1}: {s.label} at {formatTick(s.tick)}</li>
           ))}
           {evidence.map((e) => (
             <li key={e.id}>

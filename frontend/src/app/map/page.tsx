@@ -3,7 +3,7 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, Eye, MapPin } from 'lucide-react';
+import { AlertCircle, Eye } from 'lucide-react';
 import { getAlerts, getRunState, getRuns, getTopology } from '@/lib/api';
 import type { AlertItem, RunEvent, RunOut, RunState, Segment, SegmentStateName } from '@/lib/types';
 import { STATE_STYLE, formatDateTime } from '@/lib/detection';
