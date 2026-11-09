@@ -2,21 +2,79 @@
 
 ## AI-Assisted Cyber-Physical Incident Investigation Platform
 
+![Python](https://img.shields.io/badge/Python-3.12–3.14-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-SQLAlchemy-009688?logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-14-000000?logo=nextdotjs&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/ML-Isolation%20Forest-F7931E?logo=scikitlearn&logoColor=white)
+![Tests](https://img.shields.io/badge/backend%20tests-252%20passing-2ea44f)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
+![Sensify dashboard](docs/screenshots/dashboard.png)
+
 Sensify is an academic software platform for investigating unusual behavior in a simulated petroleum pipeline. It combines machine-learning anomaly detection with process relationships, telemetry reliability, and control/security events to help users understand what happened, where it happened, and which explanation the evidence supports.
 
 A pressure drop can indicate a physical disturbance, a faulty sensor, an expected control operation, or possible cyber manipulation. Sensify brings these observations into one investigation workflow, with evidence and uncertainty visible to the user.
 
 **Project:** SE 499 Senior Project, Semester 261, Prince Sultan University, College of Computer and Information Sciences, Software Engineering Department.  
 **Supervisor:** Dr. Mona Alkanhal.  
-**Development status:** Sprint 2 source is available. The charter roadmap below distinguishes delivered source from acceptance; story completion is tracked on the Scrum board. Sprint 3 investigation and reporting work remains planned.
+**Development status:** Source for all three sprints is delivered (release [v3.0](../../releases)). The roadmap below distinguishes delivered source from charter acceptance; story completion is tracked on the Scrum board.
 
 ## Current application
 
-The Sprint 2 implementation includes six simulated pipeline segments, reproducible normal/fault/cyber scenarios, a per-segment Isolation Forest detection pipeline, threshold comparison, process-consistency and telemetry-trust checks, model training/version management, alerts, and synchronized run playback. The web application uses Next.js / React; the API uses FastAPI / SQLAlchemy with local SQLite storage.
+Sensify simulates a six-segment pipeline from Dhahran to Jubail and runs reproducible normal, fault and cyber scenarios on it. Each run is scored by a per-segment Isolation Forest model, checked for process consistency and telemetry trust, and compared with threshold alarms. The investigation engine then groups the evidence into incidents and explains them.
 
-See [setup and verification](docs/SETUP.md) to run it, and [model training and evaluation](backend/ml/README.md) for data generation, model activation, and known limitations. Generated datasets, trained binaries, databases, credentials, dependencies, and caches are excluded; the setup regenerates them locally. The [supplied Sprint 2 evaluation](docs/evaluation/sprint-2-v1/report.md) records six of eight development targets met, including the two misses; fresh training reproduced those metrics during import verification. These are separate from the charter acceptance targets below.
+- **Sprint 1, platform foundation:** sign-in with Administrator and Analyst roles, user management, dashboard, pipeline map and simulator.
+- **Sprint 2, detection and evidence:** scenario builder, anomaly detection, consistency and trust checks, alerts, model training and versioning, synchronized run playback.
+- **Sprint 3, investigation and evaluation:** incidents with classification, confidence, evidence, timeline, attack-to-impact chain and MITRE ATT&CK for ICS context; PDF and CSV reports; an evaluation harness comparing threshold-only, ML-only and the full hybrid approach on development and held-out data; and a guided demo mode.
 
-## Planned capabilities
+The web application uses Next.js / React; the API uses FastAPI / SQLAlchemy with local SQLite storage.
+
+| Pipeline map during a run | Incident investigation |
+| --- | --- |
+| ![Pipeline map with anomalous and low-trust segments](docs/screenshots/pipeline-map.png) | ![Incident with attack chain and evidence rail](docs/screenshots/incident-detail.png) |
+| **Run playback** | **Evaluation** |
+| ![Run playback with telemetry charts](docs/screenshots/run-playback.png) | ![Evaluation of threshold, ML and hybrid approaches](docs/screenshots/evaluation.png) |
+
+### Development evaluation (e4)
+
+The latest recorded evaluation ([e4](backend/evaluations/e4/report.md), engine i2, model v1) compares the three approaches. Development and held-out results are never pooled, and missed targets are reported as missed.
+
+| Data | Full hybrid: targets met | Selected results |
+| --- | --- | --- |
+| Development test split (110 runs) | 14 of 14 | Event detection 92.2 %, incident detection 93.3 %, classification accuracy 85.7 %, segment localisation 96.0 % |
+| Independent held-out set (72 runs) | 8 of 15 | Event detection 71.7 %, incident detection 80.0 %, classification accuracy 73.2 %, segment localisation 91.1 % |
+
+The held-out scenarios are deliberately weaker, earlier and longer than the development ones. These are the project's development targets; the charter acceptance targets below are evaluated separately.
+
+## Quick start
+
+Full instructions, including Windows, are in [docs/SETUP.md](docs/SETUP.md).
+
+```sh
+python3 -m venv .venv && source .venv/bin/activate
+python -m pip install -r backend/requirements.txt
+cp backend/.env.example backend/.env      # then set JWT_SECRET, ADMIN_PASSWORD, ANALYST_PASSWORD
+cd backend && python -m ml.train --generate --activate && uvicorn app.main:app --port 8000
+# second terminal
+cd frontend && cp .env.example .env.local && npm ci && npm run dev   # http://localhost:3000
+```
+
+Generated datasets, trained models, databases, credentials, dependencies and caches are not committed; the setup regenerates them locally.
+
+## Repository layout
+
+| Path | Contents |
+| --- | --- |
+| `backend/app/` | FastAPI application: simulator (`sim/`), analysis (`analysis/`), investigation engine (`investigation/`), reports, routes and services |
+| `backend/ml/` | Dataset generation, model training, held-out set and evaluation harness ([model guide](backend/ml/README.md)) |
+| `backend/evaluations/` | Recorded evaluations e1 to e4 |
+| `backend/tests/` | Backend test suite (252 tests) |
+| `frontend/src/` | Next.js application: pages, components and API client |
+| `docs/` | Setup guide, sprint import records, design documents and [project reference](docs/PROJECT_STATUS.md) |
+
+## Charter capabilities
+
+The charter's capabilities below are implemented in the current source. Whether each meets its acceptance criteria is recorded on the Scrum board and in the evaluation.
 
 - Simulate approximately 5–8 connected pipeline segments with synchronized pressure, flow, valve-state, and equipment-state records.
 - Introduce configurable physical/process disturbances, sensor/device faults, and three cybersecurity scenarios: telemetry manipulation, unauthorized control manipulation, and a concealed physical incident.
@@ -49,7 +107,7 @@ Anomaly scores do not establish an incident's cause. Timing alone does not estab
 
 ## Architecture
 
-The planned system consists of a role-based web application, a protected backend API, simulation and collection components, detection and analysis components, an incident investigation engine, and evaluation/reporting components.
+The system consists of a role-based web application, a protected backend API, simulation and collection components, detection and analysis components, an incident investigation engine, and evaluation/reporting components.
 
 | Component | Responsibility |
 | --- | --- |
@@ -76,13 +134,13 @@ The backlog follows the charter's 21 user stories. Each issue retains its story 
 | --- | --- | --- | --- | --- |
 | 1 — Platform Foundation | Weeks 2–5 | Source delivered | US-01–US-07 | Users can log in, open a run, and explore pipeline conditions with permissions enforced. |
 | 2 — Detection and Evidence | Weeks 5–9 | Source delivered | US-08–US-14 | An Admin can launch a scenario, and both roles can inspect anomalies and supporting evidence. |
-| 3 — Investigation and Evaluation | Weeks 9–13 | Todo | US-15–US-21 | Users can follow an incident from detection to explanation and review comparative results. |
+| 3 — Investigation and Evaluation | Weeks 9–13 | Source delivered | US-15–US-21 | Users can follow an incident from detection to explanation and review comparative results. |
 
 Browse the [user-story issues](../../issues) and the repository's [Projects tab](../../projects) for the Scrum board.
 
 ## Evaluation targets
 
-These are preliminary charter acceptance targets for controlled simulation experiments, not achieved results.
+These are preliminary charter acceptance targets for controlled simulation experiments, not achieved results. The development evaluation above uses the project's own targets and does not by itself establish these.
 
 | Measure | Target |
 | --- | --- |
@@ -117,9 +175,9 @@ The charter proposes the following work-area leads; all members also contribute 
 
 ## Development and contribution
 
-See the [Sprint 2 import and verification record](docs/SPRINT_2_IMPORT.md) for packaging changes, test results and remaining dependency warnings.
+See the [Sprint 3](docs/SPRINT_3_IMPORT.md) and [Sprint 2](docs/SPRINT_2_IMPORT.md) import and verification records for packaging changes, test results and remaining dependency warnings.
 
-The Sprint 2 source uses a Next.js / React frontend and a FastAPI / SQLAlchemy backend with a locally generated SQLite database. See [local setup instructions](docs/SETUP.md) for installation, environment configuration, initial model training, local accounts, and automated checks. Configure your own secrets using the committed `.env.example` templates; local environment files, databases, dependencies, and build caches are excluded from Git.
+The application uses a Next.js / React frontend and a FastAPI / SQLAlchemy backend with a locally generated SQLite database. See [local setup instructions](docs/SETUP.md) for installation, environment configuration, initial model training, local accounts, and automated checks. Configure your own secrets using the committed `.env.example` templates; local environment files, databases, dependencies, and build caches are excluded from Git.
 
 - Link branches and pull requests to the relevant user-story issue.
 - Review the story's acceptance criteria before implementation and record validation evidence before marking it Done.
