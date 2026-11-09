@@ -155,7 +155,7 @@ def _json_default(o):
 
 def write_evaluation(result: dict, store: Path, version: int) -> Path:
     """Write store/eN/{results.json, report.md}; `store` is the evaluations directory."""
-    out = Path(store) / f"e{version}"
+    out = Path(store) / f"e{int(version)}"
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps(result, indent=2, default=_json_default), encoding="utf-8")
     (out / "report.md").write_text(render_report(result), encoding="utf-8")
@@ -189,7 +189,9 @@ def main() -> None:
     datasets = default_datasets()
     wanted = {"dev": ["development"], "heldout": ["heldout"], "both": ["development", "heldout"]}[args.dataset]
     result = evaluate(model, {k: datasets[k] for k in wanted})
-    version = args.version or next_version(out_dir)
+    if args.version is not None and args.version < 1:
+        parser.error("--version must be 1 or more")
+    version = int(args.version) if args.version else next_version(out_dir)
     path = write_evaluation(result, out_dir, version)
     print(f"Evaluation e{version} written to {path}")
 
