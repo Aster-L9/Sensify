@@ -427,7 +427,7 @@ export default function DashboardPage() {
                   {activities.map((a) => (
                     <li key={a.id} className="py-2.5 text-sm">
                       <span className="flex items-baseline justify-between gap-3">
-                        <span className="font-medium text-gray-900">{ACTION_LABEL[a.action] ?? a.action.replace(/_/g, ' ')}{a.username ? ` by ${a.username}` : ''}</span>
+                        <span className="font-medium text-gray-900">{ACTION_LABEL[a.action] ?? a.action.replaceAll('_', ' ')}{a.username ? ` by ${a.username}` : ''}</span>
                         <span className="text-xs text-gray-400 whitespace-nowrap">{formatDateTime(a.timestamp)}</span>
                       </span>
                       {a.details && <span className="block text-xs text-gray-500 mt-0.5">{a.details}</span>}

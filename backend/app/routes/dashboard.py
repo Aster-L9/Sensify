@@ -101,7 +101,7 @@ def _latest_evaluation(db: Session) -> dict | None:
 
 
 def _incident_tiles(db: Session, runs: list[Run]) -> tuple[dict, list[dict]]:
-    counts = {c: 0 for c in CATEGORIES} | {"uncertain": 0}
+    counts = dict.fromkeys(CATEGORIES, 0) | {"uncertain": 0}
     open_items = []
     for run in runs:
         for d in incidents_for_run(db, run, resolve_tick(run, None)):

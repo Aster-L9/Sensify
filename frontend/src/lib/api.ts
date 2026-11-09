@@ -122,7 +122,7 @@ function describeDetail(detail: unknown): string | null {
   if (Array.isArray(detail)) {
     const parts = detail.map((d: any) => {
       const field = Array.isArray(d?.loc) ? d.loc[d.loc.length - 1] : null;
-      return field && typeof field === 'string' ? `${field.replace(/_/g, ' ')}: ${d.msg}` : d?.msg;
+      return field && typeof field === 'string' ? `${field.replaceAll('_', ' ')}: ${d.msg}` : d?.msg;
     }).filter(Boolean);
     return parts.length ? parts.join('; ') : null;
   }

@@ -580,11 +580,11 @@ function SplitOutcomes({ model }: { model: ModelDetail }) {
               <tr>
                 <th>Measure</th>
                 <th className="!text-right">
-                  Validation
+                  Validation{' '}
                   <span className="block font-normal text-gray-400">{val.runs} runs: {val.scenario_runs} scenario, {val.normal_runs} normal</span>
                 </th>
                 <th className="!text-right">
-                  Test
+                  Test{' '}
                   <span className="block font-normal text-gray-400">
                     {testCount !== null ? `${testCount} runs: ${testScenario} scenario, ${testRuns?.normal ?? 0} normal` : 'held-out split'}
                   </span>

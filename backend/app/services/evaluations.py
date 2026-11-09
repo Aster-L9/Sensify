@@ -2,7 +2,7 @@
 import json
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -23,6 +23,11 @@ class NoActiveModel(Exception):
     pass
 
 
+def _utcnow() -> datetime:
+    """Naive UTC time, matching the other timestamps stored in SQLite."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def ensure_seed_evaluation(db: Session) -> None:
     if db.query(EvaluationRun).first():
         return
@@ -32,7 +37,7 @@ def ensure_seed_evaluation(db: Session) -> None:
     doc = json.loads(f.read_text(encoding="utf-8"))
     db.add(EvaluationRun(version=1, status="ready", shipped=True, results=json.dumps(doc),
                          model_version=doc.get("model_version"), engine_version=doc.get("engine_version"),
-                         created_at=datetime.utcnow()))
+                         created_at=_utcnow()))
     db.commit()
 
 
@@ -76,10 +81,10 @@ def start_evaluation(db: Session, user: User) -> EvaluationRun:
     mv, _ = active
     version = max([v for (v,) in db.query(EvaluationRun.version).all()], default=0) + 1
     ev = EvaluationRun(version=version, status="running", created_by=user.id, model_version=mv.version,
-                       created_at=datetime.utcnow())
+                       created_at=_utcnow())
     db.add(ev)
     db.add(ActivityLog(user_id=user.id, action="evaluation_run", entity_type="evaluation",
-                       details=f"Started evaluation e{version}", timestamp=datetime.utcnow()))
+                       details=f"Started evaluation e{version}", timestamp=_utcnow()))
     db.commit()
     threading.Thread(target=_worker, args=(ev.id, mv.id, user.id), daemon=True).start()
     return ev

@@ -205,7 +205,10 @@ def main(argv: list[str] | None = None) -> dict:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     args = parser.parse_args(argv)
-    summary = generate_heldout(args.out, args.seed)
+    out_dir = Path(args.out).resolve()
+    if not out_dir.is_relative_to(BACKEND_DIR):
+        parser.error(f"--out must be inside {BACKEND_DIR}")
+    summary = generate_heldout(out_dir, args.seed)
     print(json.dumps(summary, indent=2))
     return summary
 

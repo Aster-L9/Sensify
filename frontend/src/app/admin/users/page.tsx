@@ -48,7 +48,7 @@ export default function UserManagementPage() {
   };
 
   useEffect(() => {
-    if (isAdmin) fetchUserList();
+    if (isAdmin) void fetchUserList();
   }, [isAdmin]);
 
   const filteredUsers = useMemo(() => {
@@ -278,7 +278,7 @@ function AddUserForm({ onCancel, onCreated }: {
         <div>
           <label htmlFor="new-username" className="input-label">Username</label>
           <input id="new-username" className="input-field" value={username} onChange={(e) => setUsername(e.target.value)}
-            autoComplete="off" maxLength={50} aria-invalid={!!field('username')} aria-describedby="new-username-err" autoFocus />
+            autoComplete="off" maxLength={50} aria-invalid={!!field('username')} aria-describedby="new-username-err" />
           {field('username') && <p id="new-username-err" className="mt-1 text-xs text-red-700">{field('username')}</p>}
         </div>
         <div>

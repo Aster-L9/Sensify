@@ -167,6 +167,14 @@ def next_version(store: Path) -> int:
     return max(existing, default=0) + 1
 
 
+def _inside_backend(parser: argparse.ArgumentParser, path: Path) -> Path:
+    """Resolve a CLI output path and refuse anything outside the backend directory."""
+    resolved = Path(path).resolve()
+    if not resolved.is_relative_to(BACKEND_DIR):
+        parser.error(f"--out must be inside {BACKEND_DIR}")
+    return resolved
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate systems A, B and C on development and held-out data")
     parser.add_argument("--dataset", choices=["dev", "heldout", "both"], default="both")
@@ -175,13 +183,14 @@ def main() -> None:
     parser.add_argument("--model", default="v1")
     parser.add_argument("--out", type=Path, default=BACKEND_DIR / "evaluations", help="evaluations directory")
     args = parser.parse_args()
+    out_dir = _inside_backend(parser, args.out)
 
     model = DetectorModel.load(args.model_store / args.model / "model.joblib")
     datasets = default_datasets()
     wanted = {"dev": ["development"], "heldout": ["heldout"], "both": ["development", "heldout"]}[args.dataset]
     result = evaluate(model, {k: datasets[k] for k in wanted})
-    version = args.version or next_version(args.out)
-    path = write_evaluation(result, args.out, version)
+    version = args.version or next_version(out_dir)
+    path = write_evaluation(result, out_dir, version)
     print(f"Evaluation e{version} written to {path}")
 
 

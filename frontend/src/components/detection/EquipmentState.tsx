@@ -29,7 +29,7 @@ function Row({ label, word, detail, warn }: { label: string; word: string | null
       <span className="text-gray-500">{label}</span>
       <span className="text-right">
         {word ? (
-          <span className={`font-semibold ${warn ? 'text-amber-800' : 'text-gray-900'}`}>{word.replace(/(\d+)% Open/, '$1 % open')}</span>
+          <span className={`font-semibold ${warn ? 'text-amber-800' : 'text-gray-900'}`}>{word.replace('% Open', ' % open')}</span>
         ) : (
           <span className="text-gray-500">No reading</span>
         )}
